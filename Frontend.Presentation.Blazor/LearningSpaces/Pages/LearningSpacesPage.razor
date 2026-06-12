@@ -1,0 +1,957 @@
+@page "/learning-spaces"
+@attribute [Authorize]
+@rendermode InteractiveServer
+@attribute [StreamRendering]
+
+@using Microsoft.AspNetCore.Components.Forms
+@using UCR.ECCI.PI.ThemePark.Frontend.Application.LearningSpaces.Services
+@using UCR.ECCI.PI.ThemePark.Frontend.Domain.LearningSpaces.Entities
+@using UCR.ECCI.PI.ThemePark.Frontend.Domain.LearningSpaces.Exceptions.Laboratory
+@using UCR.ECCI.PI.ThemePark.Frontend.Domain.LearningSpaces.Exceptions.Classroom
+@using UCR.ECCI.PI.ThemePark.Frontend.Domain.Core.Exceptions
+@using UCR.ECCI.PI.ThemePark.Frontend.Presentation.Blazor.LearningSpaces.Components
+@using UCR.ECCI.PI.ThemePark.Frontend.Presentation.Blazor.Core.Auth.Components
+@using UCR.ECCI.PI.ThemePark.Frontend.Presentation.Blazor.Core.Components.Icons
+@using UCR.ECCI.PI.ThemePark.Frontend.Domain.Core.Metadata
+
+@inject IToastService ToastService
+@inject ILearningSpaceService LearningSpaceService
+
+<PageTitle>Learning Spaces</PageTitle>
+
+<ProtectedPageBase RequiredPermission="ListLearningSpaces">
+    <!-- Header with title and toggle controls -->
+    <div class="d-flex align-items-center justify-content-between flex-wrap mb-2">
+        <h1 class="fw-bold mb-0">Learning Spaces</h1>
+    </div>
+
+    <!-- Tabs (Laboratories / Classrooms) -->
+    <div class="learning-tabs mb-3">
+        <button type="button"
+                class="learning-tab @(selectedTab == LearningSpaceTab.Laboratories ? "active" : "")"
+                @onclick="@(() => SelectTab(LearningSpaceTab.Laboratories))">
+            Laboratories
+        </button>
+
+        <button type="button"
+                class="learning-tab @(selectedTab == LearningSpaceTab.Classrooms ? "active" : "")"
+                @onclick="@(() => SelectTab(LearningSpaceTab.Classrooms))">
+            Classrooms
+        </button>
+    </div>
+
+    @* Show content based on tab selected *@
+    @if (selectedTab == LearningSpaceTab.Laboratories)
+    {
+        <section>
+            <!-- Row 1: Only title -->
+            <div class="mb-2">
+                <h2 class="fw-bold mb-0">Laboratories</h2>
+            </div>
+
+            <!-- Row 2: Search bar + Add button -->
+            <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
+                <div class="input-group w-50 mb-2">
+                    <input class="form-control search-input-gray"
+                           placeholder="Search laboratories by Room ID (e.g.: 3-5)"
+                           @bind="_labsSearch"
+                           @bind:event="oninput"
+                           @onblur="() => LoadLaboratoriesPageAsync(1)"
+                           disabled="@_isLoadingLaboratories" />
+
+                    <button class="input-group-text bg-white border-0"
+                            style="cursor: pointer;"
+                            @onclick="() => LoadLaboratoriesPageAsync(1)"
+                            disabled="@_isLoadingLaboratories">
+                        <SearchIcon />
+                    </button>
+                </div>
+
+                <PermissionGuard RequiredPermission="ManageLearningSpaces">
+                    <button class="btn btn-ucr-blue-lg"
+                            @onclick="OpenAddLaboratory"
+                            disabled="@_isLoadingLaboratories">
+                        Add
+                    </button>
+                </PermissionGuard>
+            </div>
+
+            <Loading IsLoading="_isLoadingLaboratories">
+                <LaboratoriesTable @ref="laboratoriesTable"
+                                   Laboratories="_laboratories"
+                                   OnUpdate="EditLaboratoryPlaceholder"
+                                   OnDelete="OpenDeleteLaboratory" />
+            </Loading>
+
+            <AddLaboratoryModal IsOpen="@_isAddLaboratoryOpen"
+                                OnClose="@CloseAddLaboratory"
+                                OnCreated="@HandleLaboratoryCreated"
+                                OnError="@ShowErrorToast" />
+
+            <LaboratoryDeleteModal IsOpen="@_isDeleteLaboratoryOpen"
+                                   LaboratoryId="@_selectedLaboratoryId"
+                                   RoomId="@_selectedLaboratoryRoomId"
+                                   OnConfirm="@ConfirmDeleteLaboratory"
+                                   OnCancel="@CloseDeleteLaboratory" />
+
+            <UpdateLaboratoryModal IsOpen="@_isUpdateLaboratoryOpen"
+                                   OnClose="@CloseUpdateLaboratory"
+                                   OnUpdated="@HandleLaboratoryUpdated"
+                                   OnError="@ShowErrorToast"
+                                   @ref="_updateLaboratoryModal" />
+
+            <!-- Pagination footer -->
+            <div class="d-flex justify-content-center mt-2">
+                <div class="d-flex align-items-center justify-content-center gap-2 flex-nowrap text-nowrap pagination-inline">
+                    <div class="d-flex align-items-center gap-2">
+                        <label class="form-label fw-bold mb-0 me-1">Page Size:</label>
+
+                        <!-- Dropdown pagination -->
+                        <select class="form-select form-select-sm"
+                                style="width: 110px;"
+                                @bind="_selectedPageSizeOption"
+                                disabled="@_isLoadingLaboratories">
+                            <option value="10">10</option>
+                            <option value="20">20</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                            <option value="custom">Custom</option>
+                        </select>
+
+                        <!-- Custom size input (visible only when 'custom' is selected) -->
+                        @if (_selectedPageSizeOption == "custom")
+                        {
+                            <input type="number"
+                                   class="form-control form-control-sm"
+                                   style="width: 70px;"
+                                   min="1"
+                                   max="100"
+                                   @bind="_customPageSize"
+                                   @onblur="ApplyCustomPageSize"
+                                   disabled="@_isLoadingLaboratories" />
+                        }
+                    </div>
+
+                    <span class="tab-spacer"></span>
+
+                    <div class="d-flex align-items-center gap-2">
+                        <button class="btn btn-sm pagination-nav-btn"
+                                @onclick="PrevPageAsync"
+                                disabled="@(!CanPrev || _isLoadingLaboratories)">
+                            Previous
+                        </button>
+
+                        @foreach (var p in PageNumbers)
+                        {
+                            <button class="btn btn-sm pagination-number-btn @(p == CurrentPage ? "active" : "")"
+                                    @onclick="@(() => GoToPage(p))"
+                                    disabled="@_isLoadingLaboratories">
+                                @p
+                            </button>
+                        }
+
+                        <button class="btn btn-sm pagination-nav-btn"
+                                @onclick="NextPageAsync"
+                                disabled="@(!CanNext || _isLoadingLaboratories)">
+                            Next
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+    }
+    else if (selectedTab == LearningSpaceTab.Classrooms)
+    {
+        <section>
+            <!-- Row 1: Only title -->
+            <div class="mb-2">
+                <h2 class="fw-bold mb-0">Classrooms</h2>
+            </div>
+
+            <!-- Row 2: Search bar + Add button -->
+            <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
+                <div class="input-group w-50 mb-2">
+                    <input class="form-control search-input-gray"
+                           placeholder="Search classrooms by Room ID (e.g.: 3-5)"
+                           @bind="_classroomsSearch"
+                           @bind:event="oninput"
+                           @onblur="() => LoadClassroomsPageAsync(1)"
+                           disabled="@_isLoadingClassrooms" />
+
+                    <button class="input-group-text bg-white border-0"
+                            style="cursor: pointer;"
+                            @onclick="() => LoadClassroomsPageAsync(1)"
+                            disabled="@_isLoadingClassrooms">
+                        <SearchIcon />
+                    </button>
+                </div>
+
+                <PermissionGuard RequiredPermission="ManageLearningSpaces">
+                    <button class="btn btn-ucr-blue-lg"
+                            @onclick="OpenAddClassroom"
+                            disabled="@_isLoadingClassrooms">
+                        Add
+                    </button>
+                </PermissionGuard>
+            </div>
+
+            <Loading IsLoading="_isLoadingClassrooms">
+                <ClassroomsTable @ref="classroomsTable"
+                                 Classrooms="_classrooms"
+                                 OnEdit="EditClassroom"
+                                 OnDelete="OpenDeleteClassroom" />
+            </Loading>
+
+            <AddClassroomModal IsOpen="@_isAddClassroomOpen"
+                               OnClose="@CloseAddClassroom"
+                               OnCreated="@HandleClassroomCreated"
+                               OnError="@ShowErrorToast" />
+
+            <ClassroomDeleteModal IsOpen="@_isDeleteClassroomOpen"
+                                  ClassroomId="@_selectedClassroomId"
+                                  RoomId="@_selectedClassroomRoomId"
+                                  OnConfirm="@ConfirmDeleteClassroom"
+                                  OnCancel="@CloseDeleteClassroom" />
+
+            <UpdateClassroomModal IsOpen="@_isUpdateClassroomOpen"
+                                  OnClose="@CloseUpdateClassroom"
+                                  OnUpdated="@HandleClassroomUpdated"
+                                  OnError="@ShowErrorToast"
+                                  @ref="_updateClassroomModal" />
+
+            <!-- Pagination footer -->
+            <div class="d-flex justify-content-center mt-2">
+                <div class="d-flex align-items-center justify-content-center gap-2 flex-nowrap text-nowrap pagination-inline">
+                    <div class="d-flex align-items-center gap-2">
+                        <label class="form-label fw-bold mb-0 me-1">Page Size:</label>
+
+                        <!-- Dropdown pagination -->
+                        <select class="form-select form-select-sm"
+                                style="width: 110px;"
+                                @bind="_selectedPageSizeOption"
+                                disabled="@_isLoadingClassrooms">
+                            <option value="10">10</option>
+                            <option value="20">20</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                            <option value="custom">Custom</option>
+                        </select>
+
+                        <!-- Custom size input (visible only when 'custom' is selected) -->
+                        @if (_selectedPageSizeOption == "custom")
+                        {
+                            <input type="number"
+                                   class="form-control form-control-sm"
+                                   style="width: 70px;"
+                                   min="1"
+                                   max="100"
+                                   @bind="_customPageSize"
+                                   @onblur="ApplyCustomPageSize"
+                                   disabled="@_isLoadingClassrooms" />
+                        }
+                    </div>
+
+                    <span class="tab-spacer"></span>
+
+                    <div class="d-flex align-items-center gap-2">
+                        <button class="btn btn-sm pagination-nav-btn"
+                                @onclick="PrevPageAsync"
+                                disabled="@(!CanPrev || _isLoadingClassrooms)">
+                            Previous
+                        </button>
+
+                        @foreach (var p in PageNumbers)
+                        {
+                            <button class="btn btn-sm pagination-number-btn @(p == CurrentPage ? "active" : "")"
+                                    @onclick="@(() => GoToPage(p))"
+                                    disabled="@_isLoadingClassrooms">
+                                @p
+                            </button>
+                        }
+
+                        <button class="btn btn-sm pagination-nav-btn"
+                                @onclick="NextPageAsync"
+                                disabled="@(!CanNext || _isLoadingClassrooms)">
+                            Next
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+    }
+
+</ProtectedPageBase>
+
+@code {
+    // Pagination State
+    private PaginationMetadata? _labsPagination;
+    private PaginationMetadata? _classroomsPagination;
+
+    // Search state
+    private string _labsSearch = string.Empty;
+    private string _classroomsSearch = string.Empty;
+
+    private PaginationMetadata? ActivePagination
+        => selectedTab == LearningSpaceTab.Laboratories
+            ? _labsPagination
+            : _classroomsPagination;
+
+    private int CurrentPage => ActivePagination?.CurrentPage ?? 1;
+    private int TotalPages => ActivePagination?.TotalPages ?? 0;
+    private bool CanPrev => ActivePagination?.HasPrevious == true;
+    private bool CanNext => ActivePagination?.HasNext == true;
+
+    // Page Size State
+    private int _labsPageSize = 10;
+    private int _classroomsPageSize = 10;
+
+    private string _labsPageSizeOptionBacking = "10";
+    private string _classroomsPageSizeOptionBacking = "10";
+
+    private int _labsCustomPageSizeBacking = 10;
+    private int _classroomsCustomPageSizeBacking = 10;
+
+    private string _selectedPageSizeOption
+    {
+        get => selectedTab == LearningSpaceTab.Laboratories
+            ? _labsPageSizeOptionBacking
+            : _classroomsPageSizeOptionBacking;
+
+        set
+        {
+            var currentBacking = selectedTab == LearningSpaceTab.Laboratories
+                ? _labsPageSizeOptionBacking
+                : _classroomsPageSizeOptionBacking;
+
+            if (currentBacking == value)
+                return;
+
+            if (selectedTab == LearningSpaceTab.Laboratories)
+            {
+                _labsPageSizeOptionBacking = value;
+            }
+            else
+            {
+                _classroomsPageSizeOptionBacking = value;
+            }
+
+            UpdateEffectivePageSize();
+
+            // When changing page size, go back to first page
+            _ = selectedTab == LearningSpaceTab.Laboratories
+                ? LoadLaboratoriesPageAsync(1)
+                : LoadClassroomsPageAsync(1);
+        }
+    }
+
+    private int _customPageSize
+    {
+        get => selectedTab == LearningSpaceTab.Laboratories
+            ? _labsCustomPageSizeBacking
+            : _classroomsCustomPageSizeBacking;
+
+        set
+        {
+            if (selectedTab == LearningSpaceTab.Laboratories)
+            {
+                _labsCustomPageSizeBacking = value;
+            }
+            else
+            {
+                _classroomsCustomPageSizeBacking = value;
+            }
+        }
+    }
+
+    private void ApplyCustomPageSize()
+    {
+        // Only apply if 'custom' is selected
+        var currentOption = selectedTab == LearningSpaceTab.Laboratories
+            ? _labsPageSizeOptionBacking
+            : _classroomsPageSizeOptionBacking;
+
+        if (currentOption != "custom")
+            return;
+
+        if (selectedTab == LearningSpaceTab.Laboratories)
+        {
+            if (_labsCustomPageSizeBacking < 1)
+            {
+                _labsCustomPageSizeBacking = 1;
+                ToastService.ShowWarning("Page size must be at least 1.");
+            }
+            else if (_labsCustomPageSizeBacking > 100)
+            {
+                _labsCustomPageSizeBacking = 100;
+                ToastService.ShowWarning("Page size cannot exceed 100.");
+            }
+        }
+        else
+        {
+            if (_classroomsCustomPageSizeBacking < 1)
+            {
+                _classroomsCustomPageSizeBacking = 1;
+                ToastService.ShowWarning("Page size must be at least 1.");
+            }
+            else if (_classroomsCustomPageSizeBacking > 100)
+            {
+                _classroomsCustomPageSizeBacking = 100;
+                ToastService.ShowWarning("Page size cannot exceed 100.");
+            }
+        }
+
+        UpdateEffectivePageSize();
+
+        _ = selectedTab == LearningSpaceTab.Laboratories
+            ? LoadLaboratoriesPageAsync(1)
+            : LoadClassroomsPageAsync(1);
+    }
+
+    private void UpdateEffectivePageSize()
+    {
+        string option = selectedTab == LearningSpaceTab.Laboratories
+            ? _labsPageSizeOptionBacking
+            : _classroomsPageSizeOptionBacking;
+
+        int custom = selectedTab == LearningSpaceTab.Laboratories
+            ? _labsCustomPageSizeBacking
+            : _classroomsCustomPageSizeBacking;
+
+        int value;
+
+        if (option == "custom")
+        {
+            value = custom;
+        }
+        else if (!int.TryParse(option, out value))
+        {
+            value = 10; // Default
+        }
+
+        if (selectedTab == LearningSpaceTab.Laboratories)
+        {
+            _labsPageSize = value;
+        }
+        else
+        {
+            _classroomsPageSize = value;
+        }
+    }
+
+    private IEnumerable<int> PageNumbers
+    {
+        get
+        {
+            const int window = 2;
+            int totalPages = Math.Max(TotalPages, 1);
+            int current = CurrentPage;
+            var pages = new List<int>();
+            if (totalPages <= 7)
+            {
+                pages.AddRange(Enumerable.Range(1, totalPages));
+            }
+            else
+            {
+                pages.Add(1);
+                int start = Math.Max(2, current - window);
+                int end = Math.Min(totalPages - 1, current + window);
+                if (start > 2) pages.Add(-1); // Represents '...'
+                for (int i = start; i <= end; i++)
+                {
+                    pages.Add(i);
+                }
+                if (end < totalPages - 1) pages.Add(-1); // Represents '...'
+                pages.Add(totalPages);
+            }
+            return pages.Distinct();
+        }
+    }
+
+    private Task NextPageAsync()
+    {
+        if (!CanNext) return Task.CompletedTask;
+        return selectedTab == LearningSpaceTab.Laboratories
+            ? LoadLaboratoriesPageAsync(CurrentPage + 1)
+            : LoadClassroomsPageAsync(CurrentPage + 1);
+    }
+
+    private Task PrevPageAsync()
+    {
+        if (!CanPrev) return Task.CompletedTask;
+        return selectedTab == LearningSpaceTab.Laboratories
+            ? LoadLaboratoriesPageAsync(CurrentPage - 1)
+            : LoadClassroomsPageAsync(CurrentPage - 1);
+    }
+
+    private Task GoToPage(int page)
+    {
+        if (page == -1) return Task.CompletedTask; // Ignore clicks on '...'
+        var max = Math.Max(TotalPages, 1);
+        if (page < 1) page = 1;
+        if (page > max) page = max;
+
+        return selectedTab == LearningSpaceTab.Laboratories
+            ? LoadLaboratoriesPageAsync(page)
+            : LoadClassroomsPageAsync(page);
+    }
+
+    private async Task LoadLaboratoriesPageAsync(int page)
+    {
+        if (page < 1) page = 1;
+        _isLoadingLaboratories = true;
+        StateHasChanged();
+
+        try
+        {
+            var keyword = string.IsNullOrWhiteSpace(_labsSearch) ? null : _labsSearch;
+
+            var (Laboratories, Metadata) = 
+                await LearningSpaceService.ListLaboratoriesPagedAsync(page, _labsPageSize, keyword);
+
+            _laboratories = Laboratories ?? Enumerable.Empty<Laboratory>();
+            _labsPagination = Metadata ?? null;
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError($"Could not load laboratories: {ex.Message}");
+            _laboratories = [];
+            _labsPagination = null;
+        }
+        finally
+        {
+            _isLoadingLaboratories = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task LoadClassroomsPageAsync(int page)
+    {
+        if (page < 1) page = 1;
+        _isLoadingClassrooms = true;
+        StateHasChanged();
+
+        try
+        {
+            var keyword = string.IsNullOrWhiteSpace(_classroomsSearch) ? null : _classroomsSearch;
+
+            var (Classrooms, Metadata) = 
+                await LearningSpaceService.ListClassroomsPagedAsync(page, _classroomsPageSize, keyword);
+
+            _classrooms = Classrooms ?? Enumerable.Empty<Classroom>();
+            _classroomsPagination = Metadata ?? null;
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError($"Could not load classrooms: {ex.Message}");
+            _classrooms = [];
+            _classroomsPagination = null;
+        }
+        finally
+        {
+            _isLoadingClassrooms = false;
+            StateHasChanged();
+        }
+    }
+
+    /// <summary>
+    /// Enum for the selected tab in the learning spaces page.
+    /// </summary>
+    private enum LearningSpaceTab
+    {
+        Laboratories,
+        Classrooms
+    }
+
+    /// <summary>
+    /// Reference to the ClassroomsTable component instance.
+    /// Used to interact with the table from this page.
+    /// </summary>
+    private ClassroomsTable? classroomsTable;
+
+    /// <summary>
+    /// Determines whether the Laboratories section is visible.
+    /// Manages the selection of tabs.
+    /// </summary>
+    private LearningSpaceTab selectedTab { get; set; } = LearningSpaceTab.Laboratories;
+
+    /// <summary>
+    /// Selects a tab to display its content.
+    /// </summary>
+    /// <param name="tab">The tab to select.</param>
+    private void SelectTab(LearningSpaceTab tab) => selectedTab = tab;
+
+    /// <summary>
+    /// Reference to the LaboratoriesTable component instance.
+    /// Used to interact with the table from this page.
+    /// </summary>
+    private LaboratoriesTable? laboratoriesTable;
+
+    /// <summary>
+    /// Indicates whether laboratories are still being loaded.
+    /// </summary>
+    bool _isLoadingLaboratories = true;
+
+    /// <summary>
+    /// Indicates whether classrooms are still being loaded.
+    /// </summary>
+    bool _isLoadingClassrooms = true;
+
+    /// <summary>
+    /// Boolean to check if the Add classroom pop-up is open.
+    /// </summary>
+    private bool _isAddClassroomOpen = false;
+
+    /// <summary>
+    /// Boolean to check if the Add laboratory pop-up is open.
+    /// </summary>
+    private bool _isAddLaboratoryOpen = false;
+
+    /// <summary>
+    /// Stores the Room ID of the laboratory selected for deletion.
+    /// </summary>
+    private string? _selectedLaboratoryRoomId;
+
+    /// <summary>
+    /// Indicates whether the delete laboratory confirmation modal is open.
+    /// </summary>
+    private bool _isDeleteLaboratoryOpen = false;
+
+    /// <summary>
+    /// Stores the Room ID of the classroom selected for deletion.
+    /// </summary>
+    private string? _selectedClassroomRoomId;
+
+    /// <summary>
+    /// Indicates whether the delete classroom confirmation modal is open.
+    /// </summary>
+    private bool _isDeleteClassroomOpen = false;
+
+    /// <summary>
+    /// Stores the ID of the laboratory selected for deletion.
+    /// </summary>
+    private int _selectedLaboratoryId;
+
+    /// <summary>
+    /// Stores the ID of the classroom selected for deletion.
+    /// </summary>
+    private int _selectedClassroomId;
+
+    /// <summary>
+    /// Boolean to check if the Update laboratory pop-up is open.
+    /// </summary>
+    private bool _isUpdateLaboratoryOpen = false;
+
+    /// <summary>
+    /// Boolean to check if the Update classroom pop-up is open.
+    /// </summary>
+    private bool _isUpdateClassroomOpen = false;
+
+    /// <summary>
+    /// Reference to the update laboratory modal component.
+    /// </summary>
+    private UpdateLaboratoryModal _updateLaboratoryModal = default!;
+
+    /// <summary>
+    /// Reference to the update classroom modal component.
+    /// </summary>
+    private UpdateClassroomModal _updateClassroomModal = default!;
+
+    /// <summary>
+    /// List of laboratories to be displayed in the table.
+    /// </summary>
+    IEnumerable<Laboratory> _laboratories = [];
+
+    /// <summary>
+    /// List of classrooms to be displayed in the table.
+    /// </summary>
+    IEnumerable<Classroom> _classrooms = [];
+
+    private void ShowErrorToast(string message) => ToastService.ShowError(message);
+
+    /// <summary>
+    /// Lifecycle method that is called when the component is initialized.
+    /// </summary>
+    protected async override Task OnInitializedAsync()
+    {
+        UpdateEffectivePageSize(); // Keep this to set the initial page size
+        await Task.WhenAll(
+            LoadLaboratoriesPageAsync(1),
+            LoadClassroomsPageAsync(1)
+        );
+    }
+
+    /// <summary>
+    /// Open the add laboratory pop-up
+    /// </summary>
+    private void OpenAddLaboratory() => _isAddLaboratoryOpen = true;
+
+    /// <summary>
+    /// Close the add laboratory pop-up
+    /// </summary>
+    /// <returns>A completed task.</returns>
+    private Task CloseAddLaboratory()
+    {
+        _isAddLaboratoryOpen = false;
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    private async Task HandleLaboratoryCreated(Laboratory created)
+    {
+        await CloseAddLaboratory();
+        // After creating, go to the last page to see the new item
+        await LoadLaboratoriesPageAsync(TotalPages == 0 ? 1 : TotalPages);
+        ToastService.ShowSuccess("Laboratory created successfully!");
+    }
+
+    /// <summary>
+    /// Opens the delete confirmation modal for the specified laboratory.
+    /// </summary>
+    /// <param name="id">The ID of the laboratory to delete.</param>
+    private void OpenDeleteLaboratory(int id)
+    {
+        var laboratory = _laboratories.FirstOrDefault(l => l.Id == id);
+        _selectedLaboratoryId = id;
+        _selectedLaboratoryRoomId = laboratory?.RoomId;
+        _isDeleteLaboratoryOpen = true;
+    }
+
+    /// <summary>
+    /// Confirms and executes the deletion of the selected laboratory.
+    /// Calls the service to delete it and refreshes the laboratory list.
+    /// </summary>
+    private async Task ConfirmDeleteLaboratory()
+    {
+        try
+        {
+            await LearningSpaceService.DeleteLaboratoryAsync(_selectedLaboratoryId);
+            ToastService.ShowSuccess("Laboratory deleted successfully!");
+
+            // If the deleted item was the last on a page, go to the previous page
+            if (_laboratories.Count() == 1 && CurrentPage > 1)
+            {
+                await LoadLaboratoriesPageAsync(CurrentPage - 1);
+            }
+            else
+            {
+                await LoadLaboratoriesPageAsync(CurrentPage);
+            }
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError(ex.Message);
+        }
+        finally
+        {
+            _isDeleteLaboratoryOpen = false;
+            laboratoriesTable?.HideModal();
+        }
+    }
+
+    /// <summary>
+    /// Closes the delete confirmation modal without performing any deletion.
+    /// </summary>
+    /// <returns>A completed task.</returns>
+    private Task CloseDeleteLaboratory()
+    {
+        _isDeleteLaboratoryOpen = false;
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    private void EditLaboratoryPlaceholder(int Id)
+    {
+        var laboratory = _laboratories.FirstOrDefault(l => l.Id == Id);
+        if (laboratory != null)
+        {
+            _updateLaboratoryModal.ShowAsync(laboratory);
+            _isUpdateLaboratoryOpen = true;
+        }
+    }
+
+    /// <summary>
+    /// Close the update laboratory pop-up
+    /// </summary>
+    /// <returns>A completed task.</returns>
+    private Task CloseUpdateLaboratory()
+    {
+        _isUpdateLaboratoryOpen = false;
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    private Task DeleteLaboratoryPlaceholder(int Id)
+    {
+        // TODO: Implement delete flow
+        return Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// Open the add classroom pop-up
+    /// </summary>
+    private void OpenAddClassroom() => _isAddClassroomOpen = true;
+
+    /// <summary>
+    /// Close the add classroom pop-up
+    /// </summary>
+    /// <returns>A completed task.</returns>
+    private Task CloseAddClassroom()
+    {
+        _isAddClassroomOpen = false;
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    private async Task HandleClassroomCreated(Classroom created)
+    {
+        await CloseAddClassroom();
+        // After creating, go to the last page to see the new item
+        await LoadClassroomsPageAsync(TotalPages == 0 ? 1 : TotalPages);
+        ToastService.ShowSuccess("Classroom created successfully!");
+    }
+
+    /// <summary>
+    /// Opens the edit modal for the specified classroom.
+    /// </summary>
+    /// <param name="Id">The ID of the classroom to edit.</param>
+    private void EditClassroom(int Id)
+    {
+        var classroom = _classrooms.FirstOrDefault(c => c.Id == Id);
+        if (classroom != null)
+        {
+            _updateClassroomModal.ShowAsync(classroom);
+            _isUpdateClassroomOpen = true;
+        }
+    }
+
+    /// <summary>
+    /// Close the update classroom pop-up
+    /// </summary>
+    /// <returns>A completed task.</returns>
+    private Task CloseUpdateClassroom()
+    {
+        _isUpdateClassroomOpen = false;
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// Handles the classroom updated event by refreshing the list.
+    /// </summary>
+    /// <param name="updatedClassroom">The updated classroom.</param>
+    private async Task HandleClassroomUpdated(Classroom updatedClassroom)
+    {
+        try
+        {
+            await CloseUpdateClassroom();
+
+            // After updating, just reload the current page
+            await LoadClassroomsPageAsync(CurrentPage);
+            ToastService.ShowSuccess("Classroom updated successfully!");
+        }
+        catch (ClassroomNotFoundException ex)
+        {
+            _isUpdateClassroomOpen = false;
+            ToastService.ShowError($"Classroom not found: {ex.Message}");
+        }
+        catch (DomainException ex)
+        {
+            _isUpdateClassroomOpen = false;
+            ToastService.ShowError(ex.Message);
+        }
+        catch (Exception)
+        {
+            _isUpdateClassroomOpen = false;
+            ToastService.ShowError("An unexpected error occurred while updating the classroom.");
+        }
+    }
+
+    /// <summary>
+    /// Opens the delete confirmation modal for the specified classroom.
+    /// </summary>
+    /// <param name="id">The ID of the classroom to delete.</param>
+    private void OpenDeleteClassroom(int id)
+    {
+        var classroom = _classrooms.FirstOrDefault(c => c.Id == id);
+        _selectedClassroomId = id;
+        _selectedClassroomRoomId = classroom?.RoomId;
+        _isDeleteClassroomOpen = true;
+    }
+
+    /// <summary>
+    /// Confirms and executes the deletion of the selected classroom.
+    /// Calls the service to delete it and refreshes the classroom list.
+    /// </summary>
+    private async Task ConfirmDeleteClassroom()
+    {
+        try
+        {
+            await LearningSpaceService.DeleteClassroomAsync(_selectedClassroomId);
+
+            // If the deleted item was the last on a page, go to the previous page
+            if (_classrooms.Count() == 1 && CurrentPage > 1)
+            {
+                await LoadClassroomsPageAsync(CurrentPage - 1);
+            }
+            else
+            {
+                await LoadClassroomsPageAsync(CurrentPage);
+            }
+
+            ToastService.ShowSuccess("Classroom deleted successfully!");
+        }
+        catch (ValidationException ex)
+        {
+            ToastService.ShowError(ex.Message);
+        }
+        catch (ClassroomNotFoundException ex)
+        {
+            ToastService.ShowError($"Classroom not found: {ex.Message}");
+        }
+        catch (DomainException ex)
+        {
+            ToastService.ShowError(ex.Message);
+        }
+        catch (Exception)
+        {
+            ToastService.ShowError("Unexpected error occurred.");
+        }
+        finally
+        {
+            _isDeleteClassroomOpen = false;
+            classroomsTable?.HideModal();
+        }
+    }
+
+    /// <summary>
+    /// Closes the delete confirmation modal without performing any deletion.
+    /// </summary>
+    /// <returns>A completed task.</returns>
+    private Task CloseDeleteClassroom()
+    {
+        _isDeleteClassroomOpen = false;
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// Handles the laboratory updated event by refreshing the list.
+    /// </summary>
+    /// <param name="updatedLaboratory">The updated laboratory.</param>
+    private async Task HandleLaboratoryUpdated(Laboratory updatedLaboratory)
+    {
+        try
+        {
+            await CloseUpdateLaboratory();
+            // After updating, just reload the current page
+            await LoadLaboratoriesPageAsync(CurrentPage);
+            ToastService.ShowSuccess("Laboratory updated successfully!");
+        }
+        catch (Exception ex)
+        {
+            _isUpdateLaboratoryOpen = false;
+            laboratoriesTable?.HideModal();
+            ToastService.ShowError(ex.Message);
+        }
+    }
+}

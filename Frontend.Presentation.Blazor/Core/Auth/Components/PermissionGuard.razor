@@ -1,0 +1,30 @@
+﻿@using Microsoft.AspNetCore.Components.Authorization
+
+<AuthorizeView Policy=@RequiredPermission>
+    <Authorized>
+        @ChildContent
+    </Authorized>
+    <NotAuthorized>
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+    /// <summary>
+    /// The content to render when user has required permissions
+    /// </summary>
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    [Parameter] public String? RequiredPermission { get; set; }
+
+    protected RenderFragment? createAuthorizeTags()
+    {
+        var fragment = ChildContent;
+
+        foreach (String requiredPermission in RequiredPermission!.Split(','))
+        {
+            fragment = @<AuthorizeView Policy=@requiredPermission>@fragment</AuthorizeView>;
+        }
+
+        return fragment;
+    }
+}

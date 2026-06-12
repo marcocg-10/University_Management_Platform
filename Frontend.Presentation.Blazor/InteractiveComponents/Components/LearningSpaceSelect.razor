@@ -1,0 +1,150 @@
+﻿@using UCR.ECCI.PI.ThemePark.Frontend.Application.LearningSpaces.Services
+@using UCR.ECCI.PI.ThemePark.Frontend.Domain.Buildings.Entities
+@using UCR.ECCI.PI.ThemePark.Frontend.Application.Buildings.Services
+@using UCR.ECCI.PI.ThemePark.Frontend.Domain.LearningSpaces.Entities
+@using UCR.ECCI.PI.ThemePark.Frontend.Presentation.Blazor.Core.Components
+@inject IBuildingService BuildingService
+@inject ILearningSpaceService LearningSpaceService
+
+
+@if (_isLoadingLearningSpaces)
+{
+    <div class="d-flex align-items-center" style="gap:8px;">
+        <div class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></div>
+        <div class="form-text mb-0">Loading learning spaces...</div>
+    </div>
+}
+else if (!_learningSpaces.Any())
+{
+    <div class="bc-field">
+        There are no available learning spaces at the moment.
+    </div>
+}
+else
+{
+<CustomSelect TItem="LearningSpace"
+              Items="_orderedLearningSpaces"
+              SelectedItem="SelectedLearningSpace"
+              SelectedItemChanged="SelectedLearningSpaceChanged"
+              GetItemText="GetDisplayName"
+              GetItemKey="@(learningSpace => learningSpace.Id)"
+              Placeholder="Select Learning Space"
+              SearchPlaceholder="Search"
+              NoResultsText="No learning spaces found"
+              EnableSearch="true" />
+}
+@code {
+    /// <summary>
+    /// The currently selected learning space.
+    /// </summary>
+    [Parameter] public LearningSpace? SelectedLearningSpace { get; set; }
+
+    /// <summary>
+    /// Selected learning space ID for initialization.
+    /// </summary>
+    [Parameter] public int? SelectedLearningSpaceId { get; set; }
+
+    /// <summary>
+    /// Callback invoked when the selected learning space changes.
+    /// </summary>
+    [Parameter] public EventCallback<LearningSpace?> SelectedLearningSpaceChanged { get; set; }
+
+    /// <summary>
+    /// Indicates whether the component is loading learning spaces.
+    /// </summary>
+    private bool _isLoadingLearningSpaces = true;
+
+    /// <summary>
+    /// Available learning spaces for room selection.
+    /// </summary>
+    private IEnumerable<LearningSpace> _learningSpaces { get; set; } = Enumerable.Empty<LearningSpace>();
+
+    /// <summary>
+    /// Available buildings for additional selection or information.
+    /// </summary>
+    private IEnumerable<Building> _buildings { get; set; } = Enumerable.Empty<Building>();
+
+    /// <summary>
+    /// Ordered list of learning spaces for display.
+    /// </summary>
+    private IEnumerable<LearningSpace> _orderedLearningSpaces => _learningSpaces.OrderBy(ls => _buildings.FirstOrDefault(b => b.Id == ls.BuildingId)?.Name)
+        .ThenBy(ls => ls.RoomId);
+
+    /// <summary>
+    /// The callback invoked when learning spaces are loaded.
+    /// </summary>
+    [Parameter] public EventCallback<IEnumerable<LearningSpace>> LearningSpacesLoaded { get; set; }
+
+    /// <summary>
+	/// The currently selected learning space for internal tracking.
+    /// </summary>
+    private LearningSpace? _current;
+
+    /// <summary>
+    /// Lifecycle method called when the component is initialized.
+    /// </summary>
+    /// <returns></returns>
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            // Set is loading learning spaces to true while fetching data
+            _isLoadingLearningSpaces = true;
+
+            // Fetch buildings and learning spaces concurrently
+            var buildingsTask = BuildingService.GetBuildingsAsync();
+            var laboratoriesTask = LearningSpaceService.ListLaboratoriesAsync();
+            var classroomsTask = LearningSpaceService.ListClassroomsAsync();
+
+            // Await all tasks to complete
+            await Task.WhenAll(buildingsTask, laboratoriesTask, classroomsTask);
+
+            // Combine learning spaces from laboratories and classrooms
+            _learningSpaces = laboratoriesTask.Result.Cast<LearningSpace>()
+                .Concat(classroomsTask.Result.Cast<LearningSpace>());
+            // Assign fetched buildings
+            _buildings = buildingsTask.Result ?? Enumerable.Empty<Building>();
+
+            // If a selected learning space ID is provided, set the selected learning space
+            if (SelectedLearningSpaceId.HasValue)
+            {
+                _current = _learningSpaces.FirstOrDefault(ls => ls.Id == SelectedLearningSpaceId);
+                SelectedLearningSpace = _current;
+
+                if (SelectedLearningSpaceChanged.HasDelegate)
+                    await SelectedLearningSpaceChanged.InvokeAsync(SelectedLearningSpace);
+            }
+
+            if (LearningSpacesLoaded.HasDelegate)
+                await LearningSpacesLoaded.InvokeAsync(_learningSpaces);
+
+
+            // trigger UI update
+            StateHasChanged();
+
+        }
+        catch
+        {
+            _buildings = Array.Empty<Building>();
+            _learningSpaces = Array.Empty<LearningSpace>();
+        }
+        finally
+        {
+            // Set is loading learning spaces to false after data fetching is complete
+            _isLoadingLearningSpaces = false;
+        }
+    }
+
+    /// <summary>
+    /// Gets the display name for a learning space.
+    /// </summary>
+    /// <param name="ls">Learning space.</param>
+    /// <returns>String that indicated the building if any and the learning space.</returns>
+    private string GetDisplayName(LearningSpace ls)
+    {
+        var building = _buildings.FirstOrDefault(b => b.Id == ls.BuildingId)?.Name
+                   ?? "No building assigned";
+
+        return $"{building}, {ls.RoomId}";
+    }
+}

@@ -1,0 +1,302 @@
+@using System.ComponentModel.DataAnnotations
+@using Microsoft.AspNetCore.Components.Forms
+@using UCR.ECCI.PI.ThemePark.Frontend.Domain.LearningSpaces.Entities
+@using UCR.ECCI.PI.ThemePark.Frontend.Domain.LearningSpaces.Exceptions.Laboratory
+@using UCR.ECCI.PI.ThemePark.Frontend.Domain.Core.Exceptions
+@using UCR.ECCI.PI.ThemePark.Frontend.Application.LearningSpaces.Services
+@using UCR.ECCI.PI.ThemePark.Frontend.Application.Buildings.Services
+@using UCR.ECCI.PI.ThemePark.Frontend.Presentation.Blazor.LearningSpaces.Models
+@using UCR.ECCI.PI.ThemePark.Frontend.Presentation.Blazor.Core.Components
+@using UCR.ECCI.PI.ThemePark.Frontend.Presentation.Blazor.Buildings.Components
+@using UCR.ECCI.PI.ThemePark.Frontend.Domain.Buildings.Entities
+@inject ILearningSpaceService LearningSpaceService
+@inject IBuildingService BuildingService
+@inject NavigationManager Nav
+
+@if (IsOpen)
+{
+    <!-- Modal container -->
+    <div class="modal fade show d-block" tabindex="-1" role="dialog" aria-modal="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable" role="document">
+            <div class="modal-content shadow">
+
+                <!-- Header -->
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold">Update Laboratory</h5>
+                    <button type="button" class="btn-close" aria-label="Close" @onclick="Close"></button>
+                </div>
+
+                <!-- Body -->
+                <div class="modal-body">
+
+                    <!-- Form for updating a laboratory -->
+                    <EditForm id="update-laboratory-form" Model="@_model" OnValidSubmit="HandleValidSubmit">
+                        <DataAnnotationsValidator />
+
+                        <!-- Row 1: Building and Floor Level side by side -->
+                        <div class="row g-3 mb-3">
+                            <div class="col-12 col-md-6">
+                                <label class="form-label fw-bold">Building</label>
+
+                                @if (_loadingSelectedBuilding)
+                                {
+                                    <div class="d-flex align-items-center" style="gap:8px;">
+                                        <div class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></div>
+                                        <div class="form-text mb-0">Loading building...</div>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <BuildingSelect SelectedBuilding="_selectedBuilding"
+                                                    SelectedBuildingChanged="OnBuildingSelected" />
+                                }
+                                <ValidationMessage For="@(() => _model.BuildingId)" />
+                            </div>
+
+                            <div class="col-12 col-md-6">
+                                <label class="form-label fw-bold">Floor Level</label>
+                                <FloorSelect Building="_selectedBuilding"
+                                             SelectedFloorLevel="_selectedFloorLevel"
+                                             SelectedFloorLevelChanged="OnFloorLevelSelected" />
+                                <ValidationMessage For="@(() => _model.FloorLevel)" />
+                            </div>
+                        </div>
+
+                        <!-- Row 2: Room ID (narrower field) -->
+                        <div class="row g-3 mb-3">
+                            <div class="col-12 col-md-4">
+                                <label class="form-label fw-bold">Room ID</label>
+                                <InputText class="form-control"
+                                           @bind-Value="_model.RoomId"
+                                           placeholder="Value (e.g., LAB-301)" />
+                                <ValidationMessage For="@(() => _model.RoomId)" />
+                            </div>
+                        </div>
+
+                        <hr class="my-2" />
+
+                        <!-- Color section -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Color</label>
+                            <div style="display:flex; align-items:stretch; gap:12px;">
+                                <CustomInput @bind-Value="_model.Color"
+                                             Required="true"
+                                             Type="color" />
+                                <span style="background-color: @_model.Color; display:inline-block; width:27px; height:27px; border:1px solid #000;"></span>
+                            </div>
+                        </div>
+
+                        <!-- Texture section -->
+                        <h6 class="fw-bold mb-2">Texture</h6>
+
+                        <!-- Hidden input binds Texture for validation/state -->
+                        <InputText class="d-none" @bind-Value="_model.Texture" />
+                        <ValidationMessage For="@(() => _model.Texture)" />
+
+                        <div class="texture-grid mb-3">
+                            @foreach (var tex in _textureOptions)
+                            {
+                                var isSelected = string.Equals(_model.Texture, tex, StringComparison.OrdinalIgnoreCase);
+                                var url = GetTextureUrl(tex);
+                                <img src="@url"
+                                     alt="Texture option"
+                                     class="texture-option @(isSelected ? "selected" : null)"
+                                     role="button"
+                                     tabindex="0"
+                                     aria-pressed="@(isSelected ? "true" : "false")"
+                                     @onclick="@(() => SelectTexture(tex))"
+                                     @onkeydown="@(e => OnTextureKeyDown(e, tex))" />
+                            }
+                        </div>
+
+                        <hr class="my-2" />
+                        <h6 class="fw-bold mb-0">Dimensions (meters)</h6>
+
+                        <!-- Dimension fields (horizontal layout with smaller width) -->
+                        <div class="row g-3 mb-3">
+                            <div class="col-auto">
+                                <label class="form-label">Width</label>
+                                <InputNumber class="form-control text-end"
+                                             style="width: 120px;"
+                                             @bind-Value="_model.Width"
+                                             placeholder="Value (e.g., 10.5)" />
+                                <ValidationMessage For="@(() => _model.Width)" />
+                            </div>
+                            <div class="col-auto">
+                                <label class="form-label">Length</label>
+                                <InputNumber class="form-control text-end"
+                                             style="width: 120px;"
+                                             @bind-Value="_model.Length"
+                                             placeholder="Value (e.g., 8.2)" />
+                                <ValidationMessage For="@(() => _model.Length)" />
+                            </div>
+                            <div class="col-auto">
+                                <label class="form-label">Height</label>
+                                <InputNumber class="form-control text-end"
+                                             style="width: 120px;"
+                                             @bind-Value="_model.Height"
+                                             placeholder="Value (e.g., 3.2)" />
+                                <ValidationMessage For="@(() => _model.Height)" />
+                            </div>
+                        </div>
+
+                        <hr class="my-2" />
+                    </EditForm>
+                </div>
+
+                <!-- Footer with submit button -->
+                <div class="modal-footer border-0 pt-0">
+                    <button type="submit"
+                            form="update-laboratory-form"
+                            class="btn btn-ucr-blue-lg w-100"
+                            disabled="@_submitting">
+                        @if (_submitting)
+                        {
+                            <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                            <span>Updating...</span>
+                        }
+                        else
+                        {
+                            <span>Update</span>
+                        }
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-backdrop fade show"></div>
+}
+
+@code {
+    [Parameter] public bool IsOpen { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public EventCallback<Laboratory> OnUpdated { get; set; }
+    [Parameter] public EventCallback<string> OnError { get; set; }
+
+    private bool _submitting = false;
+    private UpdateLaboratoryForm _model = new();
+    private Building? _selectedBuilding;
+    private int? _selectedFloorLevel;
+    private bool _loadingSelectedBuilding = false;
+
+    private const string _assetsBasePath = "assets/learningspaces/textures/";
+
+    /// <summary>
+    /// Shows the modal and loads the associated Building asynchronously.
+    /// </summary>
+    public async Task ShowAsync(Laboratory laboratory)
+    {
+        // populate form model
+        _model = UpdateLaboratoryForm.FromLaboratory(laboratory);
+        _submitting = false;
+
+        _selectedFloorLevel = laboratory.FloorLevel;
+
+        _loadingSelectedBuilding = true;
+        _selectedBuilding = null;
+
+        if (laboratory.BuildingId.HasValue)
+        {
+            try
+            {
+                var buildings = await BuildingService.GetBuildingsAsync();
+                _selectedBuilding = buildings?.FirstOrDefault(b => b.Id == laboratory.BuildingId.Value);
+            }
+            catch
+            {
+                // ignore — leave selected building null; user can still pick one
+                _selectedBuilding = null;
+            }
+        }
+
+        _loadingSelectedBuilding = false;
+        StateHasChanged();
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        _submitting = true;
+
+        try
+        {
+            var updated = await LearningSpaceService.UpdateLaboratoryAsync(
+                _model.Id,
+                _model.BuildingId,
+                _model.FloorLevel,
+                _model.RoomId!,
+                _model.Color,
+                _model.Texture!,
+                _model.Width!.Value,
+                _model.Length!.Value,
+                _model.Height!.Value,
+                0,
+                0,
+                0
+            );
+
+            await OnUpdated.InvokeAsync(updated);
+            await Close();
+        }
+        catch (LaboratoryNotFoundException ex)
+        {
+            await OnError.InvokeAsync($"Laboratory not found: {ex.Message}");
+        }
+        catch (DomainException ex)
+        {
+            await OnError.InvokeAsync(ex.Message);
+        }
+        catch (Exception ex)
+        {
+            await OnError.InvokeAsync($"An unexpected error occurred: {ex.Message}");
+        }
+        finally
+        {
+            _submitting = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task Close()
+    {
+        _model = new();
+        _selectedBuilding = null;
+        _selectedFloorLevel = null;
+        _loadingSelectedBuilding = false;
+        _submitting = false;
+        await OnClose.InvokeAsync();
+    }
+
+    private readonly string[] _textureOptions =
+    [
+        "Outdoor_Wall_T01_Roughness.png",
+        "Outdoor_Wall_T02_Height.png",
+        "Outdoor_Wall_T10_Ambient_occlusion.png"
+    ];
+
+    private string GetTextureUrl(string fileName) => $"{Nav.BaseUri}{_assetsBasePath}{fileName}";
+
+    private void SelectTexture(string path) => _model.Texture = path;
+
+    private void OnTextureKeyDown(KeyboardEventArgs e, string path)
+    {
+        if (e.Key is "Enter" or " " or "Spacebar")
+            SelectTexture(path);
+    }
+
+    private void OnBuildingSelected(Building? building)
+    {
+        _selectedBuilding = building;
+        _model.BuildingId = building?.Id;
+
+        // Reset floor level when building changes
+        _selectedFloorLevel = null;
+        _model.FloorLevel = null;
+    }
+
+    private void OnFloorLevelSelected(int? floorLevel)
+    {
+        _selectedFloorLevel = floorLevel;
+        _model.FloorLevel = floorLevel;
+    }
+}

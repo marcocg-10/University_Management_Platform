@@ -1,0 +1,79 @@
+@using UCR.ECCI.PI.ThemePark.Frontend.Domain.Buildings.Entities
+@using UCR.ECCI.PI.ThemePark.Frontend.Domain.InteractiveComponents.Entities
+@using UCR.ECCI.PI.ThemePark.Frontend.Domain.LearningSpaces.Entities
+@using UCR.ECCI.PI.ThemePark.Frontend.Presentation.Blazor.Core.Components.Icons
+
+<table class="table">
+    <thead>
+        <tr>
+            <th class="header-cell-blue" style="width: 200px;">ID</th>
+            <th class="header-cell-blue" style="width: 200px;">Building</th>
+            <th class="header-cell-blue" style="width: 200px;">Room</th>
+            <th class="header-cell-blue" style="width: 200px;">Color</th>
+            <th class="header-cell-blue" style="width: 200px;">Resolution</th>
+        </tr>
+    </thead>
+
+    <tbody>
+        @if (Projectors is not null && Projectors.Any())
+        {
+            @foreach (var projector in Projectors)
+            {
+                var currentLearningSpace = LearningSpaces.FirstOrDefault(ls => ls.Id == projector.LearningSpaceId);
+                var currentBuilding = currentLearningSpace != null
+                ? Buildings.FirstOrDefault(b => b.Id == currentLearningSpace.BuildingId)
+                : null;
+
+                <tr>
+                    <td class="data-cell-gray align-middle">@projector.PlateId.Value</td>
+                    <td class="data-cell-gray align-middle">
+                        @if (currentBuilding == null)
+                        {
+                            <div class="bc-field">
+                                No building assigned
+                            </div>
+                        }
+                        else
+                        {
+                            @currentBuilding.Name
+                        }
+                    </td>
+                    <td class="data-cell-gray align-middle">
+                        @if(currentLearningSpace == null)
+                        {
+                            <div class="bc-field">
+                                No learning space assigned
+                            </div>
+                        } else
+                        {
+                            @currentLearningSpace.RoomId
+                        }
+                    </td>
+                    <td class="data-cell-gray">
+                        <span class="color-swatch"
+                              style="--swatch-color:@projector.Color.Value"
+                              aria-label="Projector color preview"
+                              title="@projector.Color.Value"></span>
+                    </td>
+                    <td class="data-cell-gray">@projector.ProjectionResolution?.Width x @projector.ProjectionResolution?.Height</td>
+                </tr>
+            }
+        }
+        else
+        {
+            <tr>
+                <td colspan="6" class="data-cell-gray text-center text-muted py-4">
+                    No projectors found.
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@code {
+    [Parameter] public IEnumerable<Projector> Projectors { get; set; } = Enumerable.Empty<Projector>();
+    [Parameter] public Action<string>? OnEdit { get; set; }
+    [Parameter] public EventCallback<string> OnDelete { get; set; }
+    [Parameter] public IEnumerable<LearningSpace> LearningSpaces { get; set; } = Enumerable.Empty<LearningSpace>();
+    [Parameter] public IEnumerable<Building> Buildings { get; set; } = Enumerable.Empty<Building>();
+}

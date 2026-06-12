@@ -1,0 +1,187 @@
+@using UCR.ECCI.PI.ThemePark.Frontend.Domain.Buildings.Entities
+@using UCR.ECCI.PI.ThemePark.Frontend.Domain.InteractiveComponents.Entities
+@using UCR.ECCI.PI.ThemePark.Frontend.Domain.LearningSpaces.Entities
+@using UCR.ECCI.PI.ThemePark.Frontend.Presentation.Blazor.Core.Components
+
+@if (IsVisible)
+{
+    var currentLearningSpace = LearningSpaces.FirstOrDefault(ls => ls.Id == @Board?.LearningSpaceId);
+    var currentBuilding = currentLearningSpace != null
+    ? Buildings.FirstOrDefault(b => b.Id == currentLearningSpace.BuildingId)
+    : null;
+
+    <!-- Overlay -->
+    <div class="bc-overlay" @onclick="OnClose">
+        <div class="bc-dialog" @onclick:stopPropagation>
+
+            <!-- Close button -->
+            <button type="button" class="bc-close" title="Close" @onclick="OnClose">✕</button>
+
+            <!-- Title -->
+            <h3 class="bc-title">Board Details</h3>
+
+            <div class="bc-form-vertical">
+                <!-- Plate ID -->
+                <div class="form-control-plateid ">
+                    <label>Plate ID</label>
+                    <div class="bc-readonly-box">@Board?.PlateId.Value</div>
+                </div>
+
+                <!-- Learning Space -->
+                <div class="bc-field">
+                    <div class="dual-grid">
+
+                        <!-- Building -->
+                        <div class="dual-cell">
+                            <label>Building Name</label>
+                            @if (currentBuilding == null)
+                            {
+                                <div class="bc-readonly-box">No building assigned</div>
+                            }
+                            else
+                            {
+                                <div class="bc-readonly-box">@currentBuilding?.Name</div>
+                            }
+                        </div>
+
+                        <!-- Room -->
+                        <div class="dual-cell">
+                            <label>Room Name</label>
+                            @if (currentLearningSpace == null)
+                            {
+                                <div class="bc-readonly-box">No learning space assigned</div>
+                            }
+                            else
+                            {
+                                <div class="bc-readonly-box">@currentLearningSpace?.RoomId</div>
+                            }
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- Appearance Section -->
+                <div class="bc-field">
+                    <div class="appearance-triplet">
+
+                        <!-- Board Color -->
+                        <div class="appearance-cell">
+                            <label>Board Color</label>
+                            <div class="color-picker-row no-click">
+                                <div class="color-preview" style="background:@Board?.Color.Value"></div>
+                            </div>
+                        </div>
+
+                        <!-- Marker Color -->
+                        <div class="appearance-cell">
+                            <label>Marker Color</label>
+                            <div class="color-picker-row no-click">
+                                <div class="color-preview" style="background:@Board?.MarkerColor.Value"></div>
+                            </div>
+                        </div>
+
+                        <!-- Texture -->
+                        <div class="appearance-cell">
+                            <label>Texture</label>
+
+                            @if (!string.IsNullOrWhiteSpace(Board?.Texture))
+                            {
+                                <img src="@GetTextureUrl(Board.Texture)"
+                                     class="texture-option selected no-click"
+                                     style="pointer-events:none;" />
+                            }
+                            else
+                            {
+                                <div class="bc-readonly-box">No texture</div>
+                            }
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- Dimensions -->
+                <div class="bc-field">
+                    <label>Dimensions</label>
+                    <div class="bc-triplet no-click">
+
+                        <div class="bc-triplet-cell">
+                            <label class="bc-sub-label">Width</label>
+                            <div class="bc-readonly-box">@($"{Board?.Dimensions.Width:F2}")</div>
+                        </div>
+
+                        <div class="bc-triplet-cell">
+                            <label class="bc-sub-label">Height</label>
+                            <div class="bc-readonly-box">@($"{Board?.Dimensions.Height:F2}")</div>
+                        </div>
+
+                        <div class="bc-triplet-cell">
+                            <label class="bc-sub-label">Depth</label>
+                            <div class="bc-readonly-box">@($"{Board?.Dimensions.Depth:F2}")</div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- Coordinates -->
+                <div class="bc-field">
+                    <label>Coordinates</label>
+                    <div class="bc-triplet no-click">
+
+                        <div class="bc-triplet-cell">
+                            <label class="bc-sub-label">X</label>
+                            <div class="bc-readonly-box">@($"{Board?.Coordinates.X:F2}")</div>
+                        </div>
+
+                        <div class="bc-triplet-cell">
+                            <label class="bc-sub-label">Y</label>
+                            <div class="bc-readonly-box">@($"{Board?.Coordinates.Y:F2}")</div>
+                        </div>
+
+                        <div class="bc-triplet-cell">
+                            <label class="bc-sub-label">Z</label>
+                            <div class="bc-readonly-box">@($"{Board?.Coordinates.Z:F2}")</div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- Rotations -->
+                <div class="bc-field">
+                    <label>Rotations</label>
+                    <div class="bc-triplet no-click">
+
+                        <div class="bc-triplet-cell">
+                            <label class="bc-sub-label">X Axis</label>
+                            <div class="bc-readonly-box">@($"{Board?.Rotations.XAxisRotation:F2}")</div>
+                        </div>
+
+                        <div class="bc-triplet-cell">
+                            <label class="bc-sub-label">Y Axis</label>
+                            <div class="bc-readonly-box">@($"{Board?.Rotations.YAxisRotation:F2}")</div>
+                        </div>
+
+                        <div class="bc-triplet-cell">
+                            <label class="bc-sub-label">Z Axis</label>
+                            <div class="bc-readonly-box">@($"{Board?.Rotations.ZAxisRotation:F2}")</div>
+                        </div>
+
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+
+    [Inject] private NavigationManager Nav { get; set; } = default!;
+    private const string _assetsBasePath = "assets/interactiveComponents/textures/";
+    private string GetTextureUrl(string f) => $"{Nav.BaseUri}{_assetsBasePath}{f}";
+
+    [Parameter] public bool IsVisible { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public Board? Board { get; set; }
+    [Parameter] public IEnumerable<LearningSpace> LearningSpaces { get; set; } = Enumerable.Empty<LearningSpace>();
+    [Parameter] public IEnumerable<Building> Buildings { get; set; } = Enumerable.Empty<Building>();
+}

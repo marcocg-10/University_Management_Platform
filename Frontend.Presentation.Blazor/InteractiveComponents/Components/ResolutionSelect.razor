@@ -1,0 +1,133 @@
+@using Microsoft.AspNetCore.Components.Forms
+@using System.Linq.Expressions
+@using UCR.ECCI.PI.ThemePark.Frontend.Presentation.Blazor.InteractiveComponents.Models
+
+<div class="bc-field">
+    <CustomSelect TItem="ResolutionOption"
+                  Items="ResolutionOptions"
+                  SelectedItem="Selected"
+                  SelectedItemChanged="HandleSelection"
+                  GetItemText="@(r => r.Label)"
+                  GetItemKey="@(r => r.Value)"
+                  Placeholder="Select resolution"
+                  SearchPlaceholder="Search resolution..."
+                  NoResultsText="No matches"
+                  EnableSearch="true" />
+
+    @if (Selected?.Value == "custom")
+    {
+        <div class="bc-field">
+            <div class="dual-grid">
+
+                <!-- Custom Width -->
+                <div class="dual-cell">
+                    <label class="bc-sub-label">Width</label>
+                    <input type="number"
+                           class="form-control form-control-number"
+                           value="@ResWidth"
+						   @oninput="OnWidthChanged"
+                           placeholder="e.g. 1920" />
+                    @if (ResWidthExpression != null)
+                    {
+                        <ValidationMessage For="ResWidthExpression" />
+                    }
+                </div>
+
+                <!-- Custom Height -->
+                <div class="dual-cell">
+                    <label class="bc-sub-label">Height</label>
+                    <input type="number"
+                           class="form-control form-control-number"
+                           value="@ResHeight"
+                           @oninput="OnHeightChanged"
+                           placeholder="e.g. 1080" />
+                    @if (ResHeightExpression != null)
+                    {
+                        <ValidationMessage For="ResHeightExpression" />
+                    }
+                </div>
+
+            </div>
+        </div>
+    }
+
+</div>
+
+@code {
+    public class ResolutionOption
+    {
+        public string Label { get; set; } = "";
+        public string Value { get; set; } = "";
+    }
+
+    [Parameter] public int? ResWidth { get; set; }
+    [Parameter] public int? ResHeight { get; set; }
+    [Parameter] public EventCallback<int> ResWidthChanged { get; set; }
+    [Parameter] public EventCallback<int> ResHeightChanged { get; set; }
+
+    [Parameter] public Expression<Func<int?>>? ResWidthExpression { get; set; }
+    [Parameter] public Expression<Func<int?>>? ResHeightExpression { get; set; }
+
+    [Parameter] public Action<string>? ClearFieldError { get; set; }
+    [Parameter] public Action<string>? NotifyFieldChanged { get; set; }
+
+    private ResolutionOption? Selected { get; set; }
+
+    // Available resolutions
+    private static readonly List<ResolutionOption> ResolutionOptions =
+    [
+        new() { Label = "3840 × 2160 (4K UHD)", Value = "3840x2160" },
+        new() { Label = "1920 × 1080 (Full HD)", Value = "1920x1080" },
+        new() { Label = "1366 × 768 (HD+)",     Value = "1366x768" },
+        new() { Label = "1280 × 720 (HD)",      Value = "1280x720" },
+        new() { Label = "Custom Resolution",     Value = "custom" }
+    ];
+
+    private async Task HandleSelection(ResolutionOption? option)
+    {
+        Selected = option;
+
+        if (option == null)
+            return;
+
+        if (option.Value == "custom")
+            return;
+
+        // Parse 1920x1080 format
+        var parts = option.Value.Split('x');
+        if (parts.Length == 2 &&
+            int.TryParse(parts[0], out var w) &&
+            int.TryParse(parts[1], out var h))
+        {
+            ResWidth = w;
+            ResHeight = h;
+
+            await ResWidthChanged.InvokeAsync(w);
+            await ResHeightChanged.InvokeAsync(h);
+        }
+    }
+
+    private Task OnWidthChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var w))
+        {
+            ClearFieldError?.Invoke(nameof(ProjectorForm.ResWidth));
+            NotifyFieldChanged?.Invoke(nameof(ProjectorForm.ResWidth));
+            return ResWidthChanged.InvokeAsync(w);
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private Task OnHeightChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var h))
+        {
+            ClearFieldError?.Invoke(nameof(ProjectorForm.ResHeight));
+            NotifyFieldChanged?.Invoke(nameof(ProjectorForm.ResHeight));
+            return ResHeightChanged.InvokeAsync(h);
+        }
+
+        return Task.CompletedTask;
+    }
+}

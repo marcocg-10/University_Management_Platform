@@ -1,0 +1,636 @@
+﻿@using Microsoft.AspNetCore.Components.Forms
+@using System.Globalization
+@using UCR.ECCI.PI.ThemePark.Frontend.Domain.Buildings.Entities
+@using UCR.ECCI.PI.ThemePark.Frontend.Domain.LearningSpaces.Entities
+@using UCR.ECCI.PI.ThemePark.Frontend.Presentation.Blazor.InteractiveComponents.Models
+
+@if (Open)
+{
+    <!-- Modal Overlay and Dialog -->
+    <div class="bc-overlay" @onclick="HandleCancel">
+        <div class="bc-dialog" @onclick:stopPropagation>
+            <!-- Close Button -->
+            <button type="button" class="bc-close" @onclick="HandleCancel">✕</button>
+
+            <!-- Modal Title -->
+            <h3 class="bc-title">Add Projector</h3>
+
+            <!-- Projector Creation Form -->
+            <EditForm EditContext="_editContext" OnValidSubmit="HandleSubmit">
+                <!-- Enables validation annotations in the model -->
+                <DataAnnotationsValidator />
+
+                <!-- Side-by-side layout (form left, minimap right) -->
+                <div class="bc-layout">
+                    <!-- Left: existing form fields -->
+                    <div class="bc-layout-left">
+                        <div class="bc-form-vertical">
+
+                            <!-- Basic Projector Information -->
+
+                            <div class="bc-field">
+                                <div class="dual-grid">
+
+                                    <!-- Plate ID -->
+                                    <div class="dual-cell">
+                                        <label>Plate ID</label>
+
+                                        <input class="form-control form-control-plateid @(GetFieldCss(nameof(Model.PlateId)))"
+                                               value="@Model.PlateId"
+                                               @oninput="OnPlateIdChanged"
+                                               placeholder="e.g. 142067" />
+                                        <ValidationMessage For="@(() => Model.PlateId)" />
+                                    </div>
+
+                                    <!-- Room ID -->
+                                    <div class="dual-cell">
+                                        <label>Learning Space</label>
+                                        <LearningSpaceSelect SelectedLearningSpace="_selectedLearningSpace"
+                                                             SelectedLearningSpaceChanged="OnLearningSpaceSelected" />
+                                    </div>
+
+                                </div>
+                            </div>
+
+                            <div class="bc-field">
+                                <div class="bc-triplet">
+                                    <div class="bc-triplet-cell-color">
+                                        <label>Projector Color</label>
+                                        <div class="color-picker-row">
+                                            <CustomInput @bind-Value="Model.Color"
+                                                         Required="true"
+                                                         Type="color"
+                                                         @onchange="OnColorChanged"/>
+                                            <span class="color-preview" style="background:@Model.Color"></span>
+                                        </div>
+                                        <ValidationMessage For="@(() => Model.Color)" />
+                                    </div>
+
+                                    <div class="bc-triplet-cell">
+                                        <label>Resolution</label>
+                                        <ResolutionSelect ResWidth="Model.ResWidth"
+                                                          ResWidthChanged="@(v => OnResolutionChanged(v, nameof(Model.ResWidth)))"
+                                                          ResWidthExpression="@(() => Model.ResWidth)"
+                                                          ResHeight="Model.ResHeight"
+                                                          ResHeightChanged="@(v => OnResolutionChanged(v, nameof(Model.ResHeight)))"
+                                                          ResHeightExpression="@(() => Model.ResHeight)"
+                                                          ClearFieldError="ClearFieldError"
+                                                          NotifyFieldChanged="NotifyFieldChanged" />
+                                    </div>
+
+                                    <div class="bc-triplet-cell">
+                                        <label>Brightness</label>
+                                        <input type="number"
+                                               class="form-control form-control-brightness @(GetFieldCss(nameof(Model.Brightness)))"
+                                               @bind="Model.Brightness"
+                                               placeholder="e.g. 75"
+                                               @oninput="e => OnNumberChanged(e, nameof(Model.Brightness))" />
+                                        <ValidationMessage For="@(() => Model.Brightness)" />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Texture -->
+                            <div class="bc-field">
+                                <label>Texture</label>
+                                <input class="form-control form-control-texture @(GetFieldCss(nameof(Model.Texture)))"
+                                           value="@Model.Texture"
+                                           placeholder="e.g. Smooth"
+                                           @oninput="OnTextureChanged"/>
+                                <ValidationMessage For="@(() => Model.Texture)" />
+                            </div>
+
+                            <!-- Dimensions Section -->
+                            <div class="bc-field">
+                                <label>Dimensions (meters)</label>
+
+                                <div class="bc-triplet">
+                                    <!-- Width -->
+                                    <div class="bc-triplet-cell">
+                                        <label class="bc-sub-label">Width</label>
+                                        <input type="text"
+                                               placeholder="e.g. 8.0"
+                                               inputmode="decimal"
+                                               value="@GetNumericValue(nameof(Model.Width))"
+                                               @oninput="e => OnNumberChanged(e, nameof(Model.Width))"
+                                               class="form-control form-control-number @(GetFieldCss(nameof(Model.Width)))" />
+                                        <ValidationMessage For="@(() => Model.Width)" />
+                                    </div>
+
+                                    <!-- Height -->
+                                    <div class="bc-triplet-cell">
+                                        <label class="bc-sub-label">Height</label>
+                                        <input type="text"
+                                               placeholder="e.g. 1.5"
+                                               inputmode="decimal"
+                                               value="@GetNumericValue(nameof(Model.Height))"
+                                               @oninput="e => OnNumberChanged(e, nameof(Model.Height))"
+                                               class="form-control form-control-number @(GetFieldCss(nameof(Model.Height)))" />
+                                        <ValidationMessage For="@(() => Model.Height)" />
+                                    </div>
+
+                                    <!-- Depth -->
+                                    <div class="bc-triplet-cell">
+                                        <label class="bc-sub-label">Depth</label>
+                                        <input type="text"
+                                               placeholder="e.g. 0.1"
+                                               inputmode="decimal"
+                                               value="@GetNumericValue(nameof(Model.Depth))"
+                                               @oninput="e => OnNumberChanged(e, nameof(Model.Depth))"
+                                               class="form-control form-control-number @(GetFieldCss(nameof(Model.Depth)))" />
+                                        <ValidationMessage For="@(() => Model.Depth)" />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Coordinates Section -->
+                            <div class="bc-field">
+                                <label>Coordinates</label>
+
+                                <div class="bc-triplet">
+                                    <!-- X -->
+                                    <div class="bc-triplet-cell">
+                                        <label class="bc-sub-label">X</label>
+                                        <input type="text"
+                                               placeholder="e.g. 10.0"
+                                               inputmode="decimal"
+                                               value="@GetNumericValue(nameof(Model.X))"
+                                               @oninput="e => OnNumberChanged(e, nameof(Model.X))"
+                                               class="form-control form-control-number @(GetFieldCss(nameof(Model.X)))" />
+                                        <ValidationMessage For="@(() => Model.X)" />
+                                    </div>
+
+                                    <!-- Y -->
+                                    <div class="bc-triplet-cell">
+                                        <label class="bc-sub-label">Y</label>
+                                        <input type="text"
+                                               placeholder="e.g. 2.0"
+                                               inputmode="decimal"
+                                               value="@GetNumericValue(nameof(Model.Y))"
+                                               @oninput="e => OnNumberChanged(e, nameof(Model.Y))"
+                                               class="form-control form-control-number @(GetFieldCss(nameof(Model.Y)))" />
+                                        <ValidationMessage For="@(() => Model.Y)" />
+                                    </div>
+
+                                    <!-- Z -->
+                                    <div class="bc-triplet-cell">
+                                        <label class="bc-sub-label">Z</label>
+                                        <input type="text"
+                                               placeholder="e.g. 6.7"
+                                               inputmode="decimal"
+                                               value="@GetNumericValue(nameof(Model.Z))"
+                                               @oninput="e => OnNumberChanged(e, nameof(Model.Z))"
+                                               class="form-control form-control-number @(GetFieldCss(nameof(Model.Z)))" />
+                                        <ValidationMessage For="@(() => Model.Z)" />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Rotations Section -->
+                            <div class="bc-field">
+                                <label>Rotations</label>
+
+                                <div class="bc-triplet">
+                                    <!-- X Axis Rotation -->
+                                    <div class="bc-triplet-cell">
+                                        <label class="bc-sub-label">X Axis</label>
+                                        <input type="text"
+                                               placeholder="e.g. 189.0"
+                                               inputmode="decimal"
+                                               value="@GetNumericValue(nameof(Model.XAxisRotation))"
+                                               @oninput="e => OnNumberChanged(e, nameof(Model.XAxisRotation))"
+                                               class="form-control form-control-number @(GetFieldCss(nameof(Model.XAxisRotation)))" />
+                                        <ValidationMessage For="@(() => Model.XAxisRotation)" />
+                                    </div>
+
+                                    <!-- Y Axis Rotation -->
+                                    <div class="bc-triplet-cell">
+                                        <label class="bc-sub-label">Y Axis</label>
+                                        <input type="text"
+                                               placeholder="e.g. 16.6"
+                                               inputmode="decimal"
+                                               value="@GetNumericValue(nameof(Model.YAxisRotation))"
+                                               @oninput="e => OnNumberChanged(e, nameof(Model.YAxisRotation))"
+                                               class="form-control form-control-number @(GetFieldCss(nameof(Model.YAxisRotation)))" />
+                                        <ValidationMessage For="@(() => Model.YAxisRotation)" />
+                                    </div>
+
+                                    <!-- Z Axis Rotation -->
+                                    <div class="bc-triplet-cell">
+                                        <label class="bc-sub-label">Z Axis</label>
+                                        <input type="text"
+                                               placeholder="e.g. 287.0"
+                                               inputmode="decimal"
+                                               value="@GetNumericValue(nameof(Model.ZAxisRotation))"
+                                               @oninput="e => OnNumberChanged(e, nameof(Model.ZAxisRotation))"
+                                               class="form-control form-control-number @(GetFieldCss(nameof(Model.ZAxisRotation)))" />
+                                        <ValidationMessage For="@(() => Model.ZAxisRotation)" />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right: MiniMap -->
+                    <div class="bc-layout-right">
+                        <div class="bc-field">
+                            <label>Preview in MiniMap</label>
+                            <InteractiveComponentMiniMap
+                                @ref="_miniMapCmp"
+                                LearningSpaceId="@_selectedLearningSpace?.Id"
+                                SelectedLearningSpace="@_selectedLearningSpace"
+                                OnObjectMoved="OnMiniMapMoved"
+                                PreviewX="@(Model.X)"
+                                PreviewY="@(Model.Z)"
+                                PreviewWidth="@(Model.Width)"
+                                PreviewLength="@(Model.Depth)"
+                                PreviewRotationDeg="@(Model.YAxisRotation)" />
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="bc-actions bc-actions--full">
+                    <button type="submit"
+                            class="btn btn-ucr-blue btn-ucr-blue--full"
+                            disabled="@_formHasErrors">
+                        Add
+                    </button>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+}
+
+@code {
+    /// <summary>
+    /// Determines whether the modal is currently visible.
+    /// </summary>
+    [Parameter] public bool Open { get; set; }
+
+    /// <summary>
+    /// The data model bound to the form fields.
+    /// </summary>
+    [Parameter] public ProjectorForm Model { get; set; } = default!;
+
+    /// <summary>
+    /// Event triggered when the modal is canceled or closed by the user.
+    /// </summary>
+    [Parameter] public EventCallback OnCancel { get; set; }
+
+    /// <summary>
+    /// Event triggered when the form is successfully submitted.
+    /// </summary>
+    [Parameter] public EventCallback OnSubmit { get; set; }
+
+    /// <summary>
+    /// Handles the cancel action (e.g., clicking the overlay or close button).
+    /// Invokes the <see cref="OnCancel"/> callback.
+    /// </summary>
+    private async Task HandleCancel()
+    {
+        if (_miniMapCmp is not null)
+            await _miniMapCmp.ResetAsync();
+
+        // Clear selection to avoid re-drawing delimiter when modal re-opens
+        _selectedLearningSpace = null;
+        Model.RoomId = 0;
+
+        await OnCancel.InvokeAsync();
+    }
+
+    /// <summary>
+    /// Handles the form submission once validation passes.
+    /// Invokes the <see cref="OnSubmit"/> callback.
+    /// </summary>
+    private async Task HandleSubmit()
+    {
+        // Notify parent first so it uses the correct RoomId
+        await OnSubmit.InvokeAsync();
+
+        // Then clean up local UI state
+        if (_miniMapCmp is not null)
+            await _miniMapCmp.ResetAsync();
+
+        // Only clear local selection to avoid re-drawing the delimiter on next open.
+        // Let the parent reset/replace the form model for the next create.
+        _selectedLearningSpace = null;
+    }
+
+    /// <summary>
+    /// Selected learning space from the LearningSpaceSelect component.
+    /// </summary>
+    private LearningSpace? _selectedLearningSpace;
+
+    /// <summary>
+    /// Tracks whether the form has validation errors.
+    /// </summary>
+    private bool _formHasErrors = false;
+
+    /// <summary>
+    /// The EditContext for managing form state and validation.
+    /// </summary>
+    private EditContext _editContext = default!;
+
+    /// <summary>
+    /// Store that holds validation messages for the form.
+    /// </summary>
+    private ValidationMessageStore _messageStore = default!;
+
+    // Stores raw text for every numeric field (so the UI does not erase partial input)
+    private readonly Dictionary<string, string> _rawNumericInputs = new();
+
+    /// <summary>
+    /// Reference to the MiniMap component for previewing projector placement.
+    /// </summary>
+    private InteractiveComponentMiniMap _miniMapCmp = default!;
+
+    /// <summary>
+    /// Handles building selection change from the LearningSpaceSelect component.
+    /// </summary>
+    private void OnLearningSpaceSelected(LearningSpace? ls)
+    {
+        _selectedLearningSpace = ls;
+        if (ls != null)
+            Model.RoomId = ls.Id;
+        else
+            Model.RoomId = 0;
+
+        // Reset position when learning space changes.
+        Model.X = 0; Model.Y = 0; Model.Z = 0;
+    }
+
+    /// <summary>
+    /// Updates the model's X and Z coordinates when the MiniMap object is moved.
+    /// </summary>
+    private Task OnMiniMapMoved(MiniMap.ObjectPosition pos)
+    {
+        // MiniMap: X/Y -> Form: X/Z
+        Model.X = pos.X;
+        Model.Z = pos.Y;
+
+        // Notify field changes so validation/UI styling updates
+        _editContext.NotifyFieldChanged(new FieldIdentifier(Model, nameof(Model.X)));
+        _editContext.NotifyFieldChanged(new FieldIdentifier(Model, nameof(Model.Z)));
+
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// Sets up the EditContext and ValidationMessageStore when parameters are set.
+    /// </summary>
+    protected override void OnParametersSet()
+    {
+        if (_editContext == null || _editContext.Model != Model)
+        {
+            _editContext = new EditContext(Model);
+            _messageStore = new ValidationMessageStore(_editContext);
+
+            _editContext.OnValidationStateChanged += (_, __) => RecalculateFormValidity();
+            _editContext.OnFieldChanged += (_, __) => RecalculateFormValidity();
+        }
+    }
+
+    /// <summary>
+    /// Injects a validation error message for a specific field in the form.
+    /// </summary>
+    /// <param name="fieldName">The fields name to set the error for.</param>
+    /// <param name="message">The error message to set.</param>
+    public void SetFieldError(string fieldName, string message)
+    {
+        var field = new FieldIdentifier(Model, fieldName);
+        _messageStore.Clear(field);
+        _messageStore.Add(field, message);
+
+        _editContext.NotifyValidationStateChanged();
+        InvokeAsync(StateHasChanged);
+    }
+
+    /// <summary>
+    /// Removes all server-side validation errors for a specific field.
+    /// </summary>
+    /// <param name="fieldName">The field name to clear errors for.</param>
+    private void ClearFieldError(string fieldName)
+    {
+        var id = new FieldIdentifier(Model, fieldName);
+        _messageStore.Clear(id);
+        _editContext.NotifyValidationStateChanged();
+    }
+
+    /// <summary>
+    /// Gets the CSS class for a field based on its validation state.
+    /// </summary>
+    /// <param name="fieldName">The name of the field.</param>
+    /// <returns>Returns "input-invalid" if the field has errors, "input-valid" if valid, otherwise an empty string.</returns>
+    private string GetFieldCss(string fieldName)
+    {
+        var field = new FieldIdentifier(Model, fieldName);
+
+        if (_editContext.GetValidationMessages(field).Any())
+            return "input-invalid";
+
+        var prop = Model.GetType().GetProperty(fieldName);
+        var value = prop?.GetValue(Model);
+
+        if (value is string s && !string.IsNullOrWhiteSpace(s))
+            return "input-valid";
+
+        if (value is double)
+            return "input-valid";
+
+        if (value is double?)
+        {
+            var nullable = (double?)value;
+            if (nullable.HasValue)
+                return "input-valid";
+        }
+
+        if (value is int)
+            return "input-valid";
+
+        if (value is int?)
+        {
+            var nullable = (int?)value;
+            if (nullable.HasValue)
+                return "input-valid";
+        }
+
+        return "";
+    }
+
+    /// <summary>
+    /// Recalculates whether the form has any validation errors.
+    /// </summary>
+    private void RecalculateFormValidity()
+    {
+        _formHasErrors = _editContext.GetValidationMessages().Any();
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void NotifyFieldChanged(string fieldName)
+    {
+        _editContext.NotifyFieldChanged(new FieldIdentifier(Model, fieldName));
+    }
+
+    /// <summary>
+    /// Clears any server-side injected errors when the Plate ID input changes.
+    /// </summary>
+    /// <param name="e">The change event arguments.</param>
+    private void OnPlateIdChanged(ChangeEventArgs e)
+    {
+        Model.PlateId = e.Value?.ToString() ?? "";
+
+        ClearFieldError(nameof(Model.PlateId));
+
+        _editContext.NotifyFieldChanged(
+            new FieldIdentifier(Model, nameof(Model.PlateId))
+        );
+    }
+
+    private void OnTextureChanged(ChangeEventArgs e)
+    {
+        Model.Texture = e.Value?.ToString() ?? "";
+
+        ClearFieldError(nameof(Model.Texture));
+
+        _editContext.NotifyFieldChanged(
+            new FieldIdentifier(Model, nameof(Model.Texture))
+        );
+    }
+
+    /// <summary>
+	/// Clears any server-side injected errors when a numeric input changes.
+    /// </summary>
+    /// <param name="e">The change event arguments.</param>
+	/// <param name="fieldName">The name of the field being changed.</param>
+    private void OnNumberChanged(ChangeEventArgs e, string fieldName)
+    {
+        var prop = Model.GetType().GetProperty(fieldName);
+        if (prop == null)
+            return;
+
+        var targetType = prop.PropertyType;
+        var raw = e.Value?.ToString() ?? "";
+
+        var field = new FieldIdentifier(Model, fieldName);
+
+        // Save raw text so Blazor doesn't overwrite it
+        _rawNumericInputs[fieldName] = raw;
+
+        var normalized = raw.Replace(",", ".");
+
+        if (string.IsNullOrWhiteSpace(raw))
+        {
+            // Set model value to null ONLY for nullable types
+            if (IsNullableNumericType(targetType))
+                prop.SetValue(Model, null);
+
+            // Clear all previous errors
+            _messageStore.Clear(field);
+
+            _editContext.NotifyFieldChanged(field);
+            _editContext.NotifyValidationStateChanged();
+            return;
+        }
+
+        object? convertedValue = null;
+        bool success = false;
+
+        // Try parsing based on the numeric type
+        try
+        {
+            if (targetType == typeof(int) || targetType == typeof(int?))
+            {
+                success = int.TryParse(normalized, NumberStyles.Any, CultureInfo.InvariantCulture, out var i);
+                if (success) convertedValue = i;
+            }
+            else if (targetType == typeof(double) || targetType == typeof(double?))
+            {
+                success = double.TryParse(normalized, NumberStyles.Any, CultureInfo.InvariantCulture, out var d);
+                if (success) convertedValue = d;
+            }
+            else if (targetType == typeof(float) || targetType == typeof(float?))
+            {
+                success = float.TryParse(normalized, NumberStyles.Any, CultureInfo.InvariantCulture, out var f);
+                if (success) convertedValue = f;
+            }
+            else if (targetType == typeof(decimal) || targetType == typeof(decimal?))
+            {
+                success = decimal.TryParse(normalized, NumberStyles.Any, CultureInfo.InvariantCulture, out var m);
+                if (success) convertedValue = m;
+            }
+        }
+        catch
+        {
+            success = false;
+        }
+
+        if (success)
+        {
+            prop.SetValue(Model, convertedValue);
+
+            // Clear all validation errors
+            _messageStore.Clear(field);
+            _editContext.NotifyValidationStateChanged();
+        }
+        else
+        {
+            if (targetType == typeof(double) || targetType == typeof(double?))
+                prop.SetValue(Model, double.NaN);
+            else if (targetType == typeof(float) || targetType == typeof(float?))
+                prop.SetValue(Model, float.NaN);
+            else if (targetType == typeof(decimal) || targetType == typeof(decimal?))
+                prop.SetValue(Model, 0m);
+            else if (targetType == typeof(int) || targetType == typeof(int?))
+                prop.SetValue(Model, int.MinValue);
+
+            // Clear all previous errors, then inject only our custom message
+            _messageStore.Clear(field);
+            _messageStore.Add(field, "Please enter a valid numeric value.");
+
+            _editContext.NotifyValidationStateChanged();
+        }
+
+        _editContext.NotifyFieldChanged(field);
+    }
+
+    private static bool IsNullableNumericType(Type type)
+    {
+        return type == typeof(int?) ||
+               type == typeof(double?) ||
+               type == typeof(float?) ||
+               type == typeof(decimal?);
+    }
+
+    /// <summary>
+	/// Clears any server-side injected errors when the Color input changes.
+    /// </summary>
+	/// <param name="e">The change event arguments.</param>
+    private void OnColorChanged(ChangeEventArgs e)
+    {
+        Model.Color = e.Value?.ToString() ?? "#000000";
+        ClearFieldError(nameof(Model.Color));
+        _editContext.NotifyFieldChanged(new FieldIdentifier(Model, nameof(Model.Color)));
+    }
+
+    private void OnResolutionChanged(int value, string fieldName)
+    {
+        Model.GetType().GetProperty(fieldName)?.SetValue(Model, value);
+
+        ClearFieldError(fieldName);
+
+        NotifyFieldChanged(fieldName);
+    }
+
+    private string? GetNumericValue(string fieldName)
+    {
+        // If user is typing, display their raw text exactly
+        if (_rawNumericInputs.TryGetValue(fieldName, out var raw))
+            return raw;
+
+        // Otherwise show the model value
+        var val = Model.GetType().GetProperty(fieldName)?.GetValue(Model);
+        return val?.ToString();
+    }
+}

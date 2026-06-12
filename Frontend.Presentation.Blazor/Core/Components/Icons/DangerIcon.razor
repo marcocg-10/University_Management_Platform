@@ -1,0 +1,27 @@
+@namespace UCR.ECCI.PI.ThemePark.Frontend.Presentation.Blazor.Core.Components.Icons
+
+<svg xmlns="http://www.w3.org/2000/svg"
+     width="@Size" height="@Size"
+     viewBox="0 0 16 16"
+     class="@Class"
+     fill="none">
+    <!-- Triangle -->
+    <path d="M7.138 1.256c.33-.57 1.395-.57 1.725 0l6.622 11.47c.33.57-.082 1.274-.863 1.274H1.38c-.781 0-1.193-.704-.863-1.274L7.138 1.256z"
+          fill="@Color" />
+    <!-- Exclamation mark -->
+    <path d="M7.25 5h1.5l-.3 4.5h-1L7.25 5z"
+          fill="white" />
+    <path d="M8 12.25a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"
+          fill="white" />
+</svg>
+
+@code {
+    /// <summary>Color of the triangle</summary>
+    [Parameter] public string Color { get; set; } = "#b24415";
+
+    /// <summary>Width and height in pixels</summary>
+    [Parameter] public int Size { get; set; } = 16;
+
+    /// <summary>Optional CSS classes</summary>
+    [Parameter] public string? Class { get; set; }
+}

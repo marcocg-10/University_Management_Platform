@@ -1,0 +1,86 @@
+﻿@using UCR.ECCI.PI.ThemePark.Frontend.Domain.Roles.Entity
+@using UCR.ECCI.PI.ThemePark.Frontend.Domain.Users.Entities
+@using UCR.ECCI.PI.ThemePark.Frontend.Presentation.Blazor.Core.Components
+@using UCR.ECCI.PI.ThemePark.Frontend.Presentation.Blazor.Core.Components.Icons
+@using Microsoft.AspNetCore.Components.Forms
+
+<Modal IsVisible="@IsVisible"
+       OnClose="OnClose"
+       ContentClass="@ContentClass"
+       ContentStyle="@ContentStyle"
+       OverlayClass="@OverlayClass"
+       OverlayStyle="@OverlayStyle">
+    <h4><strong>User details</strong></h4>
+
+    @if (User is null)
+    {
+        <p>No user selected.</p>
+    }
+    else
+    {
+        <!-- ID -->
+        <div class="mb-3">
+            <label class="form-label ">Official ID</label>
+            <div class="readonly-box ">@User.Id.Value</div>
+        </div>
+
+        <!-- Name -->
+        <div class="mb-3">
+            <label class="form-label">Name</label>
+            <div class="readonly-box">@User.Name.Value</div>
+        </div>
+
+        <!-- Email -->
+        <div class="mb-3">
+            <label class="form-label">Email</label>
+            <div class="readonly-box">@User.Email.Value</div>
+        </div>
+
+        <!-- Status -->
+        <div class="mb-3">
+            <label class="form-label">Status</label>
+            <div class="readonly-box">@(User.IsActive ? "Active" : "Inactive")</div>
+        </div>
+        
+        <!-- Roles -->
+		<div class="mt-4 w-100">
+            <div class="mb-3">
+                <label class="form-label">Assigned Roles</label>
+			</div>
+
+			@if (Roles is null || !Roles.Any())
+			{
+				<p class="text-muted text-center">No roles assigned.</p>
+			}
+			else
+			{
+				<ul class="list-group">
+					@foreach (var role in Roles)
+					{
+                        <li class="list-group-item d-flex justify-content-between align-items-center"
+                            style="background-color: #f5f5f5;">
+							<span>@role.Name.Value</span>
+						</li>
+					}
+				</ul>
+			}
+		</div>
+  
+    }
+</Modal>
+
+@code {
+    [Parameter] public bool IsVisible { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public User? User { get; set; }
+
+
+    [Parameter] public IEnumerable<Role>? Roles { get; set; }
+
+    [Parameter] public string? OverlayClass { get; set; }
+    [Parameter] public string? OverlayStyle { get; set; }
+    [Parameter] public string? ContentClass { get; set; }
+    [Parameter] public string? ContentStyle { get; set; }
+
+    //<input type="text" class="@("cursor-disabled "+ input100)"  id="addressLine1" name="addressLine1" placeholder="County Code..." @bind-Value="_model.CountyCode" readonly />
+}

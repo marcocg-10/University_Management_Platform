@@ -1,0 +1,23 @@
+﻿@using Microsoft.Extensions.Logging
+@inherits ErrorBoundaryBase
+@inject ILogger<ErrorWrapper> Logger
+@inject IToastService ToastService
+@inject NavigationManager NavigationManager
+
+@ChildContent
+
+@code {
+    // `ChildContent` is provided by `ErrorBoundaryBase` (inherited);
+    // do not redeclare it here or Blazor will report duplicate parameters.
+    protected override Task OnErrorAsync(Exception exception)
+    {
+        // Log the exception and show toast notification
+        Logger.LogError(exception, "Unhandled exception in ErrorWrapper");
+        ToastService.ShowError($"Error: {exception.Message}");
+        
+        // Redirect to the 500 error page
+        NavigationManager.NavigateTo("/error/500", true);
+        
+        return Task.CompletedTask;
+    }
+}

@@ -1,0 +1,204 @@
+@* Profile sidebar: shows Login when unauthenticated, otherwise shows user name with expandable menu and profile info *@
+@using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.AspNetCore.Components.Routing
+@using System.Security.Claims
+@using UCR.ECCI.PI.ThemePark.Frontend.Application.Users.Services
+@using UCR.ECCI.PI.ThemePark.Frontend.Domain.Users.Entities
+@using UCR.ECCI.PI.ThemePark.Frontend.Presentation.Blazor.Core.Components.Icons
+
+@implements IDisposable
+@inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthStateProvider
+@inject IUserService UserService
+<AuthorizeView>
+    <Authorized>
+        <div class="profile-sidebar">
+            <div class="profile-header" @onclick="ToggleMenu" title="Click to open menu">
+                <div class="avatar" aria-hidden="true">
+                    <VCardIcon />
+                </div>
+                <div class="user-basic">
+                    <span class="user-field">@userNameProfile</span>
+                    @if (!string.IsNullOrWhiteSpace(userEmail))
+                    {
+                        <span class="user-email">@userEmail</span>
+                    }
+                </div>
+                <span class="chevron bi @(showMenu ? "bi-chevron-up" : "bi-chevron-down")" aria-hidden="true"></span>
+            </div>
+
+            @if (showProfile)
+            {
+                <div class="profile-card" @onblur="HideProfile">
+                    <div class="profile-row">
+                        <span class="user-field">Official ID</span>
+                        <span class="value">@userId</span>
+                    </div>
+                    <div class="profile-row">
+                        <span class="user-field">Name:</span>
+                        <span class="value">@userName</span>
+                    </div>
+                    @if (!string.IsNullOrWhiteSpace(userEmail))
+                    {
+                        <div class="profile-row">
+                            <span class="user-field">Email:</span>
+                            <span class="value">@userEmail</span>
+                        </div>
+                    }
+                    <div class="profile-row">
+                        <span class="label">Status:</span>
+                        <span class="value">Active</span>
+                    </div>
+                </div>
+            }
+        </div>
+
+        @* Overlay menu rendered outside sidebar to avoid nested look *@
+        @if (showMenu)
+        {
+            <div class="profile-menu-overlay" @onclick:stopPropagation>
+                <button type="button" class="menu-item" @onclick="ToggleProfile" @onclick:stopPropagation>
+                    <ProfileInfoIcon />
+                    View Profile
+                </button>
+                <form action="authentication/logout" method="post" class="logout-form" @onclick:stopPropagation>
+                    <AntiforgeryToken />
+                    <input type="hidden" name="ReturnUrl" value="@currentUrl" />
+                    <button type="submit" class="menu-item logout-button" @onclick:stopPropagation>
+                        <LogOutIcon />
+                        Logout
+                    </button>
+                </form>
+            </div>
+        }
+    </Authorized>
+    <NotAuthorized>
+        <a class="nav-menu-item login-link" href="authentication/login">
+            <span class="bi bi-box-arrow-in-right" aria-hidden="true"></span>
+            Login
+        </a>
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+    private string? currentUrl;
+    private string? userName;
+    private string? userNameProfile;
+    private string? userEmail;
+    private string? userId;
+    private string? azureId;
+    private string? userActive;
+    private User? userObject;
+
+    private bool showMenu = false;
+    private bool showProfile = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        currentUrl = Navigation.Uri;
+        Navigation.LocationChanged += OnLocationChanged;
+        await LoadUserAsync();
+    }
+
+    private async void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        currentUrl = Navigation.Uri;
+        await LoadUserAsync();
+        StateHasChanged();
+    }
+
+    private async Task LoadUserAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+        if (user.Identity?.IsAuthenticated == true)
+        {
+            azureId = user.FindFirst("http://schemas.microsoft.com/identity/claims/objectidentifier")?.Value;
+            if (azureId is not null) {
+
+                try
+                {
+                    var(userResult, error) = await UserService.GetUserByAzureObjectIdentifierAsync(azureId!);
+                    if (error is not null)
+                    {
+                        Console.Error.WriteLine(error);
+                        await AssignWithClaims();
+                        return;
+                    }
+                    userObject = userResult!;
+
+                    userName = userObject.Name.Value;
+                    TrimName();
+                    userEmail = userObject.Email.Value;
+                    userId = userObject.Id.Value;
+                    userActive = userObject.IsActive ? "Active" : "Inactive";
+                }
+                catch (Exception ex)
+                {
+                    Console.Error.WriteLine($"GetUserByAzureObjectIdentifierAsync failed: {ex.Message}");
+                    userObject = null;
+                    await AssignWithClaims();
+                }    
+            } 
+            else
+            {
+                await AssignWithClaims();
+            }          
+        }
+        else
+        {
+            userName = null;
+            userEmail = null;
+            showMenu = false;
+            showProfile = false;
+        }
+    }
+
+    private async Task AssignWithClaims()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+        userName = user.Identity?.Name
+                         ?? user.FindFirst(ClaimTypes.Name)?.Value
+                         ?? user.FindFirst("extension_FullName")?.Value
+                         ?? user.FindFirst("preferred_username")?.Value
+                         ?? "Unknown";
+		TrimName();
+        userEmail = user.FindFirst(ClaimTypes.Email)?.Value
+           ?? user.FindFirst("emails")?.Value ?? "Unknown";
+        userId = user.FindFirst("extension_Identification")?.Value ?? "Unknown";
+        userActive = "Active";
+    }
+
+    private void TrimName()
+    {
+        userNameProfile = userName;
+        if (userNameProfile != null && userNameProfile.Length > 14)
+        {          
+            userNameProfile = userNameProfile.Substring(0, 14) + "...";
+        }
+
+    }
+
+    private void ToggleMenu() 
+    {
+        showMenu = !showMenu;
+        if (!showMenu)
+        {
+            showProfile = false;
+        }
+    }
+    private void HideMenu() 
+    {       
+        showMenu = false;
+        showProfile = false;    
+               
+    }
+    private void ToggleProfile()
+    {
+        showProfile = !showProfile;
+        showMenu = true; // keep menu open when viewing profile
+    }
+	private void HideProfile() => showProfile = false;
+    public void Dispose() => Navigation.LocationChanged -= OnLocationChanged;
+}

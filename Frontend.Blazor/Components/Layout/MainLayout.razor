@@ -1,0 +1,28 @@
+﻿@inherits LayoutComponentBase
+@using Blazored.Toast.Configuration
+@using UCR.ECCI.PI.ThemePark.Frontend.Presentation.Blazor.Core.Components
+
+
+
+<BlazoredToasts Position="ToastPosition.BottomRight" Timeout="10" IconType="IconType.Material" ShowProgressBar="@true"
+    ShowCloseButton="@true" MaxToastCount="3" ErrorClass="toast-high-z" InfoClass="toast-high-z"
+    SuccessClass="toast-high-z" WarningClass="toast-high-z" />
+
+<ErrorWrapper>
+    <div class="page">
+        <div class="sidebar">
+            <NavMenu />
+        </div>
+
+        <main>
+            <article class="content px-4">
+                @Body
+            </article>
+        </main>
+
+        <AuthenticationTrigger />
+    </div>
+
+</ErrorWrapper>
+
+<RadzenComponents @rendermode="InteractiveAuto" />

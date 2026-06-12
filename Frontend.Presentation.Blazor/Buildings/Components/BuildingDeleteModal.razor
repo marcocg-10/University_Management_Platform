@@ -1,0 +1,152 @@
+﻿@namespace UCR.ECCI.PI.ThemePark.Frontend.Presentation.Blazor.Buildings.Components
+
+@* 
+===========================================================
+Component: BuildingDeleteModal
+===========================================================
+*@
+
+@if (IsOpen)
+{
+    <!-- Backdrop to capture clicks and dim background -->
+    <div class="bd-backdrop" @onclick="Cancel" aria-hidden="true"></div>
+
+    <!--
+        Main container for the popup.
+        Uses a fixed position to stay centered on screen.
+        aria-modal and role attributes improve accessibility.
+    -->
+    <div class="bd-card" role="dialog" aria-modal="true" aria-label="Delete building dialog">
+
+        <!-- HEADER SECTION -->
+        <!-- Contains the title ("Delete"), icon, and close button -->
+        <div class="bd-header">
+
+            <!-- Title and icon wrapper -->
+            <div class="bd-title-wrap">
+                <!-- Small circular info icon -->
+                <span class="bd-icon">i</span>
+
+                <!-- Title text -->
+                <span class="bd-title">Delete</span>
+            </div>
+
+            <!-- "×" button to close the modal -->
+            <button class="bd-close"
+                    @onclick="Cancel"
+                    aria-label="Close">
+                ×
+            </button>
+        </div>
+
+        <!-- SUBTITLE SECTION -->
+        <!-- Displays the building Official ID (and optionally Name) being deleted -->
+        <div class="bd-subtitle">
+            @if (string.IsNullOrWhiteSpace(OfficialId))
+            {
+                <span class="text-danger">Unable to render delete dialog: missing building selection.</span>
+            }
+            else
+            {
+                <span>Building Official ID: <strong class="bd-hl">@OfficialId</strong></span>
+                @if (!string.IsNullOrWhiteSpace(Name))
+                {
+                    <span class="bd-sep"> | </span>
+                    <span>Name: <strong class="bd-hl">@Name</strong></span>
+                }
+            }
+        </div>
+
+        <!-- BODY SECTION -->
+        <!-- Contains the confirmation message -->
+        <div class="bd-body">
+            Are you sure you want to permanently delete this building?
+        </div>
+
+        <!-- FOOTER SECTION -->
+        <!-- Contains the confirmation button only -->
+        <div class="bd-footer">
+            <button class="bd-btn bd-btn-danger"
+                    @onclick="Confirm"
+                    disabled="@string.IsNullOrWhiteSpace(OfficialId)">
+                Delete
+            </button>
+        </div>
+    </div>
+}
+
+@code {
+    /* ===========================================================
+       PARAMETERS
+       These values are provided by the parent component.
+       =========================================================== */
+
+    /// <summary>
+    /// Controls whether the modal is visible or hidden.
+    /// True = visible, False = hidden.
+    /// </summary>
+    [Parameter] public bool IsOpen { get; set; }
+
+    /// <summary>
+    /// Event triggered when the IsOpen state changes.
+    /// Enables two-way binding with the parent.
+    /// </summary>
+    [Parameter] public EventCallback<bool> IsOpenChanged { get; set; }
+
+    /// <summary>
+    /// The official ID of the building being deleted, displayed in the subtitle.
+    /// </summary>
+    [Parameter] public string? OfficialId { get; set; }
+
+    /// <summary>
+    /// Optional building name (purely for display).
+    /// </summary>
+    [Parameter] public string? Name { get; set; }
+
+    /// <summary>
+    /// Event triggered when the user confirms the deletion.
+    /// The parent component handles the actual delete logic.
+    /// </summary>
+    [Parameter] public EventCallback OnConfirm { get; set; }
+
+    /// <summary>
+    /// Event triggered when the user cancels or closes the modal.
+    /// </summary>
+    [Parameter] public EventCallback OnCancel { get; set; }
+
+    /* ===========================================================
+       PRIVATE METHODS
+       These handle internal modal logic.
+       =========================================================== */
+
+    /// <summary>
+    /// Handles the "Delete" button click.
+    /// Invokes the parent OnConfirm event and closes the modal.
+    /// </summary>
+    private async Task Confirm()
+    {
+        await OnConfirm.InvokeAsync();
+        await Close();
+    }
+
+    /// <summary>
+    /// Handles the "×" button click or cancel action.
+    /// Invokes the parent OnCancel event and closes the modal.
+    /// </summary>
+    private async Task Cancel()
+    {
+        await OnCancel.InvokeAsync();
+        await Close();
+    }
+
+    /// <summary>
+    /// Closes the modal by setting IsOpen to false
+    /// and notifying the parent component (if subscribed).
+    /// </summary>
+    private async Task Close()
+    {
+        IsOpen = false;
+        if (IsOpenChanged.HasDelegate)
+            await IsOpenChanged.InvokeAsync(IsOpen);
+    }
+}

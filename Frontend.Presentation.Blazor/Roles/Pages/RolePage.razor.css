@@ -1,0 +1,65 @@
+/* Taken from the PIBDIS team*/
+
+.pagination-inline {
+    white-space: nowrap;
+    overflow-x: auto;
+    max-width: 100%;
+}
+
+.tab-spacer {
+    flex: 0 0 2.5rem;
+    display: inline-block;
+}
+
+/* Numbered pagination buttons: default state */
+.pagination-inline .pagination-number-btn {
+    background-color: #eeefef;
+    color: #214b6e;
+    border: 1px solid #a6a6a6;
+    font-weight: 600;
+}
+
+    .pagination-inline .pagination-number-btn:hover:not(:disabled),
+    .pagination-inline .pagination-number-btn:focus:not(:disabled) {
+        background-color: #eeefef;
+        color: #214b6e;
+        border-color: #a6a6a6;
+    }
+
+    .pagination-inline .pagination-number-btn.active {
+        background-color: #214b6e;
+        color: #ffffff;
+        border-color: #214b6e;
+        font-weight: 700;
+    }
+
+        .pagination-inline .pagination-number-btn.active:hover:not(:disabled),
+        .pagination-inline .pagination-number-btn.active:focus:not(:disabled) {
+            background-color: #214b6e;
+            color: #ffffff;
+            border-color: #214b6e;
+        }
+
+/* Previous/Next buttons with same format */
+.pagination-inline .pagination-nav-btn {
+    background-color: #eeefef;
+    color: #214b6e;
+    border: 1px solid #a6a6a6;
+    font-weight: 700;
+}
+
+    .pagination-inline .pagination-nav-btn:hover:not(:disabled),
+    .pagination-inline .pagination-nav-btn:focus:not(:disabled) {
+        background-color: #eeefef;
+        color: #214b6e;
+        border-color: #a6a6a6;
+    }
+
+    .pagination-inline .pagination-nav-btn:disabled {
+        background-color: #eeefef;
+        color: #9f9c9c;
+        border-color: #a6a6a6;
+        font-weight: 700;
+        opacity: 1;
+        cursor: not-allowed;
+    }

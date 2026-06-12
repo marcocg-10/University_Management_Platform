@@ -1,0 +1,17 @@
+{
+    "name": "ReadyPlayerMe.AvatarCreator",
+    "rootNamespace": "",
+    "references": [
+        "ReadyPlayerMe.Core",
+        "UCR.ECCI.PI.ThemePark.Unity.Infrastructure"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

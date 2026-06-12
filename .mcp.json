@@ -1,0 +1,10 @@
+{
+  "inputs": [],
+  "servers": {
+    "InteractiveComponents": {
+      "type": "sse",
+      "url": "https://localhost:7119/mcp",
+      "headers": {}
+    }
+  }
+}

@@ -1,0 +1,81 @@
+name: Build and Analyze
+
+env:
+  BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
+  SONAR_SCANNER_PATH: ./.sonar/scanner
+  DOTNET_COVERAGE_PATH: ./.deps-dotnet-tools/coverage
+  SOLUTION_PATH: .
+
+on:
+  push:
+    branches: [ main, development ]
+  pull_request:
+    branches: [ main, development ]
+
+jobs:
+  build:
+    name: Build
+    runs-on: self-hosted
+    permissions: read-all
+    steps:
+
+      - name: Checkout code
+        uses: actions/checkout@v1
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET 9.0 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v1
+        with:
+          java-version: 17
+
+      - name: Cache SonarQube packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.sonar/cache
+          key: ${{ runner.os }}-sonar
+          restore-keys: ${{ runner.os }}-sonar
+
+      - name: Cache SonarQube scanner
+        id: cache-sonar-scanner
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.SONAR_SCANNER_PATH }}
+          key: ${{ runner.os }}-sonar-scanner
+          restore-keys: ${{ runner.os }}-sonar-scanner
+
+      - name: Install SonarQube scanner
+        if: steps.cache-sonar-scanner.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          mkdir -p "${{ env.SONAR_SCANNER_PATH }}"
+          dotnet tool update dotnet-sonarscanner --tool-path "${{ env.SONAR_SCANNER_PATH }}"
+
+      - name: Restore Tools
+        run: dotnet tool restore
+
+      - name: Build and analyze
+        shell: bash
+        run: |
+          "${{ env.SONAR_SCANNER_PATH }}/dotnet-sonarscanner" begin \
+            /k:"${{ secrets.SONAR_PROJECT_KEY }}" \
+            /d:sonar.token="${{ secrets.SONAR_TOKEN }}" \
+            /d:sonar.host.url="${{ secrets.SONAR_HOST_URL }}" \
+            /d:sonar.branch.name="${{ env.BRANCH_NAME }}" \
+            /d:sonar.cs.opencover.reportsPaths="${{ github.workspace }}/${{ env.SOLUTION_PATH }}/**/TestResults/**/coverage.opencover.xml" \
+            /v:"${{ github.run_id }}"
+
+          dotnet build --no-incremental "${{ env.SOLUTION_PATH }}"
+
+          dotnet test "${{ env.SOLUTION_PATH }}" \
+            --no-build \
+            --collect:"XPlat Code Coverage" \
+            -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
+
+          "${{ env.SONAR_SCANNER_PATH }}/dotnet-sonarscanner" end \
+            /d:sonar.token="${{ secrets.SONAR_TOKEN }}"

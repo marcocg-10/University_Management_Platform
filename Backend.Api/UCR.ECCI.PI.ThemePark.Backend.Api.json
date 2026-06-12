@@ -1,0 +1,3792 @@
+{
+  "openapi": "3.0.4",
+  "info": {
+    "title": "UCR.ECCI.PI.ThemePark.Backend.Api | v1",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/interactive-components/board": {
+      "post": {
+        "tags": [
+          "CreateBoardHandler"
+        ],
+        "operationId": "CreateBoard",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateBoardRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateBoardResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InteractiveComponentValidationErorrResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InteractiveComponentConflictErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "ListAllBoardsHandler"
+        ],
+        "operationId": "ListAllBoards",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListAllBoardsResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/interactive-components/board/{plateId}": {
+      "get": {
+        "tags": [
+          "ReadBoardByPlateIdHandler"
+        ],
+        "operationId": "ReadBoardByPlateId",
+        "parameters": [
+          {
+            "name": "plateId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "UpdateBoardHandler"
+        ],
+        "operationId": "UpdateBoard",
+        "parameters": [
+          {
+            "name": "plateId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateBoardRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateBoardResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InteractiveComponentValidationErorrResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InteractiveComponentConflictErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "DeleteBoardHandler"
+        ],
+        "operationId": "DeleteBoard",
+        "parameters": [
+          {
+            "name": "plateId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/interactive-components/projector": {
+      "post": {
+        "tags": [
+          "CreateProjectorHandler"
+        ],
+        "operationId": "CreateProjector",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateProjectorRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateProjectorResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InteractiveComponentValidationErorrResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InteractiveComponentConflictErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "ListAllProjectorsHandler"
+        ],
+        "operationId": "ListAllProjectors",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListAllProjectorsResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/interactive-components/boards": {
+      "get": {
+        "tags": [
+          "ListBoardsPagedHandler"
+        ],
+        "operationId": "ListBoardsPaginated",
+        "parameters": [
+          {
+            "name": "pageNumber",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListBoardsPagedResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/interactive-components/boards/filter": {
+      "get": {
+        "tags": [
+          "FilterBoardsHandler"
+        ],
+        "operationId": "FilterBoards",
+        "parameters": [
+          {
+            "name": "searchTerm",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pageNumber",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FilterBoardsResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/interactive-components/projectors/filter": {
+      "get": {
+        "tags": [
+          "FilterProjectorHandler"
+        ],
+        "operationId": "FilterProjectors",
+        "parameters": [
+          {
+            "name": "searchTerm",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pageNumber",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FilterProjectorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/buildings": {
+      "get": {
+        "tags": [
+          "GetBuildingsHandler"
+        ],
+        "operationId": "GetBuildings",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetBuildingsResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "CreateBuildingsHandler"
+        ],
+        "operationId": "CreateBuilding",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateBuildingRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateBuildingResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConflictErrorResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/buildings/{officialId}": {
+      "delete": {
+        "tags": [
+          "DeleteBuildingHandler"
+        ],
+        "operationId": "DeleteBuilding",
+        "parameters": [
+          {
+            "name": "officialId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConflictErrorResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "UpdateBuildingHandler"
+        ],
+        "operationId": "UpdateBuilding",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateBuildingRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConflictErrorResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/laboratories": {
+      "post": {
+        "tags": [
+          "CreateLaboratoryHandler"
+        ],
+        "operationId": "CreateLaboratory",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateLaboratoryRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateLaboratoryResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LearningSpaceValidationErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LearningSpaceConflictErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "ListLaboratoriesHandler"
+        ],
+        "operationId": "ListLaboratories",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListLaboratoriesResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/buildings/{buildingId}/learningspaces": {
+      "get": {
+        "tags": [
+          "ListLearningSpaceByBuildingIdHandler"
+        ],
+        "operationId": "ListLearningSpacesByBuildingId",
+        "parameters": [
+          {
+            "name": "buildingId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListLearningSpacesByBuildingIdResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/laboratories/{laboratoryId}": {
+      "get": {
+        "tags": [
+          "GetLaboratoryHandler"
+        ],
+        "operationId": "ReadLaboratory",
+        "parameters": [
+          {
+            "name": "laboratoryId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetLaboratoryResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LearningSpaceNotFoundErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "UpdateLaboratoryHandler"
+        ],
+        "operationId": "UpdateLaboratory",
+        "parameters": [
+          {
+            "name": "laboratoryId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateLaboratoryRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateLaboratoryResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LearningSpaceNotFoundErrorResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LearningSpaceValidationErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LearningSpaceConflictErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "DeleteLaboratoryHandler"
+        ],
+        "operationId": "DeleteLaboratory",
+        "parameters": [
+          {
+            "name": "laboratoryId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteLearningSpaceResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LearningSpaceNotFoundErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LearningSpaceConflictErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/classrooms/{classroomId}": {
+      "get": {
+        "tags": [
+          "GetClassroomHandler"
+        ],
+        "operationId": "GetClassroom",
+        "parameters": [
+          {
+            "name": "classroomId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetClassroomResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LearningSpaceNotFoundErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "DeleteClassroomHandler"
+        ],
+        "operationId": "DeleteClassroom",
+        "parameters": [
+          {
+            "name": "classroomId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteLearningSpaceResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LearningSpaceNotFoundErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LearningSpaceConflictErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "UpdateClassroomHandler"
+        ],
+        "operationId": "UpdateClassroom",
+        "parameters": [
+          {
+            "name": "classroomId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateClassroomRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateClassroomResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LearningSpaceNotFoundErrorResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LearningSpaceValidationErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LearningSpaceConflictErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/classrooms": {
+      "post": {
+        "tags": [
+          "CreateClassroomHandler"
+        ],
+        "operationId": "CreateClassroom",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateClassroomRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateClassroomResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LearningSpaceValidationErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LearningSpaceConflictErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "ListClassroomsHandler"
+        ],
+        "operationId": "ListClassrooms",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListClassroomsResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/learningspaces/{learningSpaceId}": {
+      "get": {
+        "tags": [
+          "GetLearningSpaceHandler"
+        ],
+        "operationId": "GetLearningSpace",
+        "parameters": [
+          {
+            "name": "learningSpaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetLearningSpaceResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LearningSpaceNotFoundErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/laboratories/paged": {
+      "get": {
+        "tags": [
+          "ListLaboratoriesPagedHandler"
+        ],
+        "operationId": "ListLaboratoriesPaginated",
+        "parameters": [
+          {
+            "name": "pageNumber",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "keyword",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListLaboratoriesPagedResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/classrooms/paged": {
+      "get": {
+        "tags": [
+          "ListClassroomsPagedHandler"
+        ],
+        "operationId": "ListClassroomsPaginated",
+        "parameters": [
+          {
+            "name": "pageNumber",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "keyword",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListClassroomsPagedResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users": {
+      "get": {
+        "tags": [
+          "GetActiveUsersHandler"
+        ],
+        "operationId": "GetActiveUsers",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetActiveUsersResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "CreateUsersHandler"
+        ],
+        "operationId": "CreateUsers",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateUserResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateUserResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateUserResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/searchUsers": {
+      "get": {
+        "tags": [
+          "SearchUsersByNameHandler"
+        ],
+        "operationId": "SearchUsers",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pageNumber",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchUsersByNameResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/asignRoleToUser/{userId}": {
+      "put": {
+        "tags": [
+          "AssignRoleHandler"
+        ],
+        "operationId": "AssignRoleToUser",
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RoleDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssignRoleToUserResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssignRoleToUserResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssignRoleToUserResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssignRoleToUserResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/register": {
+      "put": {
+        "tags": [
+          "RegisterUserFromClaimsHandler"
+        ],
+        "operationId": "RegisterUserUsingClaims",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/users/{userId}/roles": {
+      "get": {
+        "tags": [
+          "ListUserRolesHandler"
+        ],
+        "operationId": "ListUserRoles",
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListUserRolesResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListUserRolesErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/oid/{azureObjectIdentifier}": {
+      "get": {
+        "tags": [
+          "GetUserByAzureObjectIdentifierHandler"
+        ],
+        "operationId": "GetUserByAzureObjectIdentifier",
+        "parameters": [
+          {
+            "name": "azureObjectIdentifier",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetUserByAzureObjectIdentifierResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetUserByAzureObjectIdentifierErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/{azureObjectIdentifier}/permissions": {
+      "get": {
+        "tags": [
+          "GetCurrentUserPermissionsHandler"
+        ],
+        "operationId": "GetCurrentUserPermissions",
+        "parameters": [
+          {
+            "name": "azureObjectIdentifier",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetCurrentUserPermissionsResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/paginated": {
+      "get": {
+        "tags": [
+          "ListActiveUsersPagedHandler"
+        ],
+        "operationId": "GetActiveUsersPaged",
+        "parameters": [
+          {
+            "name": "pageNumber",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListActiveusersPagedResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/avatar": {
+      "put": {
+        "tags": [
+          "PersistAvatarIdHandler"
+        ],
+        "operationId": "PersistAvatarId",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AvatarIdDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccesfulPersistAvatarIdResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorPersistAvatarIdResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorPersistAvatarIdResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorPersistAvatarIdResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/permissions": {
+      "post": {
+        "tags": [
+          "CreatePermissionsHandler"
+        ],
+        "operationId": "CreatePermissions",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PermissionDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "GetAllPermissionsHandler"
+        ],
+        "operationId": "GetPermissions",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetAllPermissionsResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/roles": {
+      "post": {
+        "tags": [
+          "CreateRoleHandler"
+        ],
+        "operationId": "CreateRole",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateRoleRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateRoleResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConflictErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResult"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "ListRolesHandler"
+        ],
+        "operationId": "GetRoles",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListRolesResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/assignPermissionToRole/{roleId}": {
+      "put": {
+        "tags": [
+          "AssignPermissionHandler"
+        ],
+        "operationId": "AssignRole",
+        "parameters": [
+          {
+            "name": "roleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PermissionDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConflictErrorResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/roles/{roleId}/permissions": {
+      "get": {
+        "tags": [
+          "ListRolePermissionsHandler"
+        ],
+        "operationId": "GetRolePermissions",
+        "parameters": [
+          {
+            "name": "roleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListRolesPermissionsResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListRolesPermissionsErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/searchRoles": {
+      "get": {
+        "tags": [
+          "SearchRolesHandler"
+        ],
+        "operationId": "SearchRoles",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pageNumber",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchRolesResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/roles/paginated": {
+      "get": {
+        "tags": [
+          "ListRolesPagedHandler"
+        ],
+        "operationId": "GetRolesPaged",
+        "parameters": [
+          {
+            "name": "pageNumber",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListRolesPagedResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AssignRoleToUserResponse": {
+        "required": [
+          "success",
+          "message"
+        ],
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "AvatarIdDto": {
+        "required": [
+          "avatarId"
+        ],
+        "type": "object",
+        "properties": {
+          "avatarId": {
+            "type": "string"
+          }
+        }
+      },
+      "BoardDto": {
+        "required": [
+          "color",
+          "markerColor",
+          "texture",
+          "plateId",
+          "x",
+          "y",
+          "z",
+          "width",
+          "height",
+          "depth",
+          "xAxisRotation",
+          "yAxisRotation",
+          "zAxisRotation",
+          "learningSpaceId"
+        ],
+        "type": "object",
+        "properties": {
+          "color": {
+            "type": "string"
+          },
+          "markerColor": {
+            "type": "string"
+          },
+          "texture": {
+            "type": "string"
+          },
+          "plateId": {
+            "type": "string"
+          },
+          "x": {
+            "type": "number",
+            "format": "double"
+          },
+          "y": {
+            "type": "number",
+            "format": "double"
+          },
+          "z": {
+            "type": "number",
+            "format": "double"
+          },
+          "width": {
+            "type": "number",
+            "format": "double"
+          },
+          "height": {
+            "type": "number",
+            "format": "double"
+          },
+          "depth": {
+            "type": "number",
+            "format": "double"
+          },
+          "xAxisRotation": {
+            "type": "number",
+            "format": "double"
+          },
+          "yAxisRotation": {
+            "type": "number",
+            "format": "double"
+          },
+          "zAxisRotation": {
+            "type": "number",
+            "format": "double"
+          },
+          "learningSpaceId": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "BuildingDtoWithId": {
+        "required": [
+          "id",
+          "officialId",
+          "name",
+          "floorCount",
+          "buildingRenderInfo"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "officialId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "floorCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "buildingRenderInfo": {
+            "$ref": "#/components/schemas/BuildingRenderInfoDto"
+          }
+        }
+      },
+      "BuildingRenderInfoDto": {
+        "required": [
+          "color",
+          "height",
+          "width",
+          "depth",
+          "xCoordinate",
+          "yCoordinate",
+          "zCoordinate",
+          "texture"
+        ],
+        "type": "object",
+        "properties": {
+          "color": {
+            "type": "string"
+          },
+          "height": {
+            "type": "number",
+            "format": "double"
+          },
+          "width": {
+            "type": "number",
+            "format": "double"
+          },
+          "depth": {
+            "type": "number",
+            "format": "double"
+          },
+          "xCoordinate": {
+            "type": "number",
+            "format": "double"
+          },
+          "yCoordinate": {
+            "type": "number",
+            "format": "double"
+          },
+          "zCoordinate": {
+            "type": "number",
+            "format": "double"
+          },
+          "texture": {
+            "type": "string"
+          }
+        }
+      },
+      "ClassroomDto": {
+        "required": [
+          "id",
+          "buildingId",
+          "floorLevel",
+          "roomId",
+          "color",
+          "texture",
+          "width",
+          "length",
+          "height",
+          "xCoordinate",
+          "yCoordinate",
+          "zCoordinate"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "buildingId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "floorLevel": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "roomId": {
+            "type": "string"
+          },
+          "color": {
+            "type": "string"
+          },
+          "texture": {
+            "type": "string"
+          },
+          "width": {
+            "type": "number",
+            "format": "float"
+          },
+          "length": {
+            "type": "number",
+            "format": "float"
+          },
+          "height": {
+            "type": "number",
+            "format": "float"
+          },
+          "xCoordinate": {
+            "type": "number",
+            "format": "float"
+          },
+          "yCoordinate": {
+            "type": "number",
+            "format": "float"
+          },
+          "zCoordinate": {
+            "type": "number",
+            "format": "float"
+          }
+        }
+      },
+      "ConflictErrorResponse": {
+        "required": [
+          "errorMessage"
+        ],
+        "type": "object",
+        "properties": {
+          "errorMessage": {
+            "type": "string"
+          }
+        }
+      },
+      "CreateBoardRequest": {
+        "required": [
+          "board"
+        ],
+        "type": "object",
+        "properties": {
+          "board": {
+            "$ref": "#/components/schemas/BoardDto"
+          }
+        }
+      },
+      "CreateBoardResponse": {
+        "required": [
+          "board"
+        ],
+        "type": "object",
+        "properties": {
+          "board": {
+            "$ref": "#/components/schemas/BoardDto"
+          }
+        }
+      },
+      "CreateBuildingRequest": {
+        "required": [
+          "officialID",
+          "name",
+          "floorCount",
+          "color",
+          "height",
+          "width",
+          "depth",
+          "x",
+          "y",
+          "z",
+          "texture"
+        ],
+        "type": "object",
+        "properties": {
+          "officialID": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "floorCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "color": {
+            "type": "string"
+          },
+          "height": {
+            "type": "number",
+            "format": "double"
+          },
+          "width": {
+            "type": "number",
+            "format": "double"
+          },
+          "depth": {
+            "type": "number",
+            "format": "double"
+          },
+          "x": {
+            "type": "number",
+            "format": "double"
+          },
+          "y": {
+            "type": "number",
+            "format": "double"
+          },
+          "z": {
+            "type": "number",
+            "format": "double"
+          },
+          "texture": {
+            "type": "string"
+          }
+        }
+      },
+      "CreateBuildingResponse": {
+        "required": [
+          "building"
+        ],
+        "type": "object",
+        "properties": {
+          "building": {
+            "$ref": "#/components/schemas/BuildingDtoWithId"
+          }
+        }
+      },
+      "CreateClassroomRequest": {
+        "required": [
+          "buildingId",
+          "floorLevel",
+          "roomId",
+          "color",
+          "texture",
+          "width",
+          "length",
+          "height",
+          "xCoordinate",
+          "yCoordinate",
+          "zCoordinate"
+        ],
+        "type": "object",
+        "properties": {
+          "buildingId": {
+            "type": "string",
+            "nullable": true
+          },
+          "floorLevel": {
+            "type": "string",
+            "nullable": true
+          },
+          "roomId": {
+            "type": "string"
+          },
+          "color": {
+            "type": "string"
+          },
+          "texture": {
+            "type": "string"
+          },
+          "width": {
+            "type": "string"
+          },
+          "length": {
+            "type": "string"
+          },
+          "height": {
+            "type": "string"
+          },
+          "xCoordinate": {
+            "type": "string"
+          },
+          "yCoordinate": {
+            "type": "string"
+          },
+          "zCoordinate": {
+            "type": "string"
+          }
+        }
+      },
+      "CreateClassroomResponse": {
+        "required": [
+          "classroom"
+        ],
+        "type": "object",
+        "properties": {
+          "classroom": {
+            "$ref": "#/components/schemas/ClassroomDto"
+          }
+        }
+      },
+      "CreateLaboratoryRequest": {
+        "required": [
+          "buildingId",
+          "floorLevel",
+          "roomId",
+          "color",
+          "texture",
+          "width",
+          "length",
+          "height",
+          "xCoordinate",
+          "yCoordinate",
+          "zCoordinate"
+        ],
+        "type": "object",
+        "properties": {
+          "buildingId": {
+            "type": "string",
+            "nullable": true
+          },
+          "floorLevel": {
+            "type": "string",
+            "nullable": true
+          },
+          "roomId": {
+            "type": "string"
+          },
+          "color": {
+            "type": "string"
+          },
+          "texture": {
+            "type": "string"
+          },
+          "width": {
+            "type": "string"
+          },
+          "length": {
+            "type": "string"
+          },
+          "height": {
+            "type": "string"
+          },
+          "xCoordinate": {
+            "type": "string"
+          },
+          "yCoordinate": {
+            "type": "string"
+          },
+          "zCoordinate": {
+            "type": "string"
+          }
+        }
+      },
+      "CreateLaboratoryResponse": {
+        "required": [
+          "laboratory"
+        ],
+        "type": "object",
+        "properties": {
+          "laboratory": {
+            "$ref": "#/components/schemas/LaboratoryDto"
+          }
+        }
+      },
+      "CreateProjectorRequest": {
+        "required": [
+          "projector"
+        ],
+        "type": "object",
+        "properties": {
+          "projector": {
+            "$ref": "#/components/schemas/ProjectorDto"
+          }
+        }
+      },
+      "CreateProjectorResponse": {
+        "required": [
+          "projector"
+        ],
+        "type": "object",
+        "properties": {
+          "projector": {
+            "$ref": "#/components/schemas/ProjectorDto"
+          }
+        }
+      },
+      "CreateRoleRequest": {
+        "required": [
+          "role"
+        ],
+        "type": "object",
+        "properties": {
+          "role": {
+            "$ref": "#/components/schemas/RoleDto"
+          }
+        }
+      },
+      "CreateRoleResponse": {
+        "required": [
+          "role"
+        ],
+        "type": "object",
+        "properties": {
+          "role": {
+            "$ref": "#/components/schemas/RoleIdDto"
+          }
+        }
+      },
+      "CreateUserResponse": {
+        "required": [
+          "success",
+          "message"
+        ],
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "DeleteLearningSpaceResponse": {
+        "required": [
+          "message"
+        ],
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "ErrorPersistAvatarIdResponse": {
+        "required": [
+          "errorCode",
+          "errorMessage"
+        ],
+        "type": "object",
+        "properties": {
+          "errorCode": {
+            "type": "string"
+          },
+          "errorMessage": {
+            "type": "string"
+          }
+        }
+      },
+      "ErrorResponse": {
+        "required": [
+          "error"
+        ],
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string"
+          }
+        }
+      },
+      "ExceptionResult": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "type": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "detail": {
+            "type": "string"
+          }
+        }
+      },
+      "FilterBoardsResponse": {
+        "required": [
+          "boards",
+          "metadata"
+        ],
+        "type": "object",
+        "properties": {
+          "boards": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BoardDto"
+            }
+          },
+          "metadata": {
+            "$ref": "#/components/schemas/PaginationMetadata"
+          }
+        }
+      },
+      "FilterProjectorResponse": {
+        "required": [
+          "projectors",
+          "metadata"
+        ],
+        "type": "object",
+        "properties": {
+          "projectors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProjectorDto"
+            }
+          },
+          "metadata": {
+            "$ref": "#/components/schemas/PaginationMetadata"
+          }
+        }
+      },
+      "GetActiveUsersResponse": {
+        "required": [
+          "users"
+        ],
+        "type": "object",
+        "properties": {
+          "users": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UserIdDto"
+            }
+          }
+        }
+      },
+      "GetAllPermissionsResponse": {
+        "required": [
+          "permissions"
+        ],
+        "type": "object",
+        "properties": {
+          "permissions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PermissionIdDto"
+            }
+          }
+        }
+      },
+      "GetBuildingsResponse": {
+        "required": [
+          "buildings"
+        ],
+        "type": "object",
+        "properties": {
+          "buildings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BuildingDtoWithId"
+            }
+          }
+        }
+      },
+      "GetClassroomResponse": {
+        "required": [
+          "classroom"
+        ],
+        "type": "object",
+        "properties": {
+          "classroom": {
+            "$ref": "#/components/schemas/ClassroomDto"
+          }
+        }
+      },
+      "GetCurrentUserPermissionsResponse": {
+        "required": [
+          "permissions"
+        ],
+        "type": "object",
+        "properties": {
+          "permissions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "GetLaboratoryResponse": {
+        "required": [
+          "laboratory"
+        ],
+        "type": "object",
+        "properties": {
+          "laboratory": {
+            "$ref": "#/components/schemas/LaboratoryDto"
+          }
+        }
+      },
+      "GetLearningSpaceResponse": {
+        "required": [
+          "learningSpace"
+        ],
+        "type": "object",
+        "properties": {
+          "learningSpace": {
+            "$ref": "#/components/schemas/LearningSpaceDto"
+          }
+        }
+      },
+      "GetUserByAzureObjectIdentifierErrorResponse": {
+        "required": [
+          "errorMessage",
+          "errorCode"
+        ],
+        "type": "object",
+        "properties": {
+          "errorMessage": {
+            "type": "string"
+          },
+          "errorCode": {
+            "type": "string"
+          }
+        }
+      },
+      "GetUserByAzureObjectIdentifierResponse": {
+        "required": [
+          "user"
+        ],
+        "type": "object",
+        "properties": {
+          "user": {
+            "$ref": "#/components/schemas/UserIdDto"
+          }
+        }
+      },
+      "InteractiveComponentConflictErrorResponse": {
+        "required": [
+          "errorMessage"
+        ],
+        "type": "object",
+        "properties": {
+          "errorMessage": {
+            "type": "string"
+          }
+        }
+      },
+      "InteractiveComponentValidationErorrResponse": {
+        "required": [
+          "errorMessage"
+        ],
+        "type": "object",
+        "properties": {
+          "errorMessage": {
+            "type": "string"
+          }
+        }
+      },
+      "LaboratoryDto": {
+        "required": [
+          "id",
+          "buildingId",
+          "floorLevel",
+          "roomId",
+          "color",
+          "texture",
+          "width",
+          "length",
+          "height",
+          "xCoordinate",
+          "yCoordinate",
+          "zCoordinate"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "buildingId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "floorLevel": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "roomId": {
+            "type": "string"
+          },
+          "color": {
+            "type": "string"
+          },
+          "texture": {
+            "type": "string"
+          },
+          "width": {
+            "type": "number",
+            "format": "float"
+          },
+          "length": {
+            "type": "number",
+            "format": "float"
+          },
+          "height": {
+            "type": "number",
+            "format": "float"
+          },
+          "xCoordinate": {
+            "type": "number",
+            "format": "float"
+          },
+          "yCoordinate": {
+            "type": "number",
+            "format": "float"
+          },
+          "zCoordinate": {
+            "type": "number",
+            "format": "float"
+          }
+        }
+      },
+      "LearningSpaceConflictErrorResponse": {
+        "required": [
+          "errorMessage"
+        ],
+        "type": "object",
+        "properties": {
+          "errorMessage": {
+            "type": "string"
+          }
+        }
+      },
+      "LearningSpaceDto": {
+        "required": [
+          "id",
+          "buildingId",
+          "floorLevel",
+          "roomId",
+          "color",
+          "texture",
+          "width",
+          "length",
+          "height",
+          "xCoordinate",
+          "yCoordinate",
+          "zCoordinate"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "buildingId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "floorLevel": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "roomId": {
+            "type": "string"
+          },
+          "color": {
+            "type": "string"
+          },
+          "texture": {
+            "type": "string"
+          },
+          "width": {
+            "type": "number",
+            "format": "float"
+          },
+          "length": {
+            "type": "number",
+            "format": "float"
+          },
+          "height": {
+            "type": "number",
+            "format": "float"
+          },
+          "xCoordinate": {
+            "type": "number",
+            "format": "float"
+          },
+          "yCoordinate": {
+            "type": "number",
+            "format": "float"
+          },
+          "zCoordinate": {
+            "type": "number",
+            "format": "float"
+          }
+        }
+      },
+      "LearningSpaceNotFoundErrorResponse": {
+        "required": [
+          "errorMessage"
+        ],
+        "type": "object",
+        "properties": {
+          "errorMessage": {
+            "type": "string"
+          }
+        }
+      },
+      "LearningSpaceValidationErrorResponse": {
+        "required": [
+          "errorMessage"
+        ],
+        "type": "object",
+        "properties": {
+          "errorMessage": {
+            "type": "string"
+          }
+        }
+      },
+      "ListActiveusersPagedResponse": {
+        "required": [
+          "users",
+          "metadata"
+        ],
+        "type": "object",
+        "properties": {
+          "users": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UserDto"
+            }
+          },
+          "metadata": {
+            "$ref": "#/components/schemas/PaginationMetadata"
+          }
+        }
+      },
+      "ListAllBoardsResponse": {
+        "required": [
+          "boards"
+        ],
+        "type": "object",
+        "properties": {
+          "boards": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BoardDto"
+            }
+          }
+        }
+      },
+      "ListAllProjectorsResponse": {
+        "required": [
+          "projectors"
+        ],
+        "type": "object",
+        "properties": {
+          "projectors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProjectorDto"
+            }
+          }
+        }
+      },
+      "ListBoardsPagedResponse": {
+        "required": [
+          "boards",
+          "metadata"
+        ],
+        "type": "object",
+        "properties": {
+          "boards": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BoardDto"
+            }
+          },
+          "metadata": {
+            "$ref": "#/components/schemas/PaginationMetadata"
+          }
+        }
+      },
+      "ListClassroomsPagedResponse": {
+        "required": [
+          "classrooms",
+          "metadata"
+        ],
+        "type": "object",
+        "properties": {
+          "classrooms": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ClassroomDto"
+            }
+          },
+          "metadata": {
+            "$ref": "#/components/schemas/PaginationMetadata"
+          }
+        }
+      },
+      "ListClassroomsResponse": {
+        "required": [
+          "classrooms"
+        ],
+        "type": "object",
+        "properties": {
+          "classrooms": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ClassroomDto"
+            }
+          }
+        }
+      },
+      "ListLaboratoriesPagedResponse": {
+        "required": [
+          "laboratories",
+          "metadata"
+        ],
+        "type": "object",
+        "properties": {
+          "laboratories": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LaboratoryDto"
+            }
+          },
+          "metadata": {
+            "$ref": "#/components/schemas/PaginationMetadata"
+          }
+        }
+      },
+      "ListLaboratoriesResponse": {
+        "required": [
+          "laboratories"
+        ],
+        "type": "object",
+        "properties": {
+          "laboratories": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LaboratoryDto"
+            }
+          }
+        }
+      },
+      "ListLearningSpacesByBuildingIdResponse": {
+        "required": [
+          "learningSpaces"
+        ],
+        "type": "object",
+        "properties": {
+          "learningSpaces": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LearningSpaceDto"
+            }
+          }
+        }
+      },
+      "ListRolesPagedResponse": {
+        "required": [
+          "role",
+          "metadata"
+        ],
+        "type": "object",
+        "properties": {
+          "role": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RoleDto"
+            }
+          },
+          "metadata": {
+            "$ref": "#/components/schemas/PaginationMetadata"
+          }
+        }
+      },
+      "ListRolesPermissionsErrorResponse": {
+        "required": [
+          "errorMessage",
+          "errorCode"
+        ],
+        "type": "object",
+        "properties": {
+          "errorMessage": {
+            "type": "string"
+          },
+          "errorCode": {
+            "type": "string"
+          }
+        }
+      },
+      "ListRolesPermissionsResponse": {
+        "required": [
+          "permissions"
+        ],
+        "type": "object",
+        "properties": {
+          "permissions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PermissionIdDto"
+            }
+          }
+        }
+      },
+      "ListRolesResponse": {
+        "required": [
+          "roles"
+        ],
+        "type": "object",
+        "properties": {
+          "roles": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RoleIdDto"
+            }
+          }
+        }
+      },
+      "ListUserRolesErrorResponse": {
+        "required": [
+          "errorMessage",
+          "errorCode"
+        ],
+        "type": "object",
+        "properties": {
+          "errorMessage": {
+            "type": "string"
+          },
+          "errorCode": {
+            "type": "string"
+          }
+        }
+      },
+      "ListUserRolesResponse": {
+        "required": [
+          "roles"
+        ],
+        "type": "object",
+        "properties": {
+          "roles": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RoleIdDto"
+            }
+          }
+        }
+      },
+      "PaginationMetadata": {
+        "required": [
+          "currentPage",
+          "pageSize",
+          "totalCount",
+          "totalPages"
+        ],
+        "type": "object",
+        "properties": {
+          "currentPage": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pageSize": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalPages": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "PermissionDto": {
+        "required": [
+          "name"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          }
+        }
+      },
+      "PermissionIdDto": {
+        "required": [
+          "name",
+          "id"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "ProblemDetails": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "nullable": true
+          },
+          "title": {
+            "type": "string",
+            "nullable": true
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "detail": {
+            "type": "string",
+            "nullable": true
+          },
+          "instance": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "ProjectorDto": {
+        "required": [
+          "color",
+          "texture",
+          "brightness",
+          "plateId",
+          "resWidth",
+          "resHeight",
+          "x",
+          "y",
+          "z",
+          "width",
+          "height",
+          "depth",
+          "xAxisRotation",
+          "yAxisRotation",
+          "zAxisRotation",
+          "learningSpaceId"
+        ],
+        "type": "object",
+        "properties": {
+          "color": {
+            "type": "string"
+          },
+          "texture": {
+            "type": "string"
+          },
+          "brightness": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "plateId": {
+            "type": "string"
+          },
+          "resWidth": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "resHeight": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "x": {
+            "type": "number",
+            "format": "double"
+          },
+          "y": {
+            "type": "number",
+            "format": "double"
+          },
+          "z": {
+            "type": "number",
+            "format": "double"
+          },
+          "width": {
+            "type": "number",
+            "format": "double"
+          },
+          "height": {
+            "type": "number",
+            "format": "double"
+          },
+          "depth": {
+            "type": "number",
+            "format": "double"
+          },
+          "xAxisRotation": {
+            "type": "number",
+            "format": "double"
+          },
+          "yAxisRotation": {
+            "type": "number",
+            "format": "double"
+          },
+          "zAxisRotation": {
+            "type": "number",
+            "format": "double"
+          },
+          "learningSpaceId": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "RoleDto": {
+        "required": [
+          "name"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          }
+        }
+      },
+      "RoleIdDto": {
+        "required": [
+          "id",
+          "name"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "name": {
+            "type": "string"
+          }
+        }
+      },
+      "SearchRolesResponse": {
+        "required": [
+          "roles",
+          "metadata"
+        ],
+        "type": "object",
+        "properties": {
+          "roles": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RoleDto"
+            }
+          },
+          "metadata": {
+            "$ref": "#/components/schemas/PaginationMetadata"
+          }
+        }
+      },
+      "SearchUsersByNameResponse": {
+        "required": [
+          "users",
+          "metadata"
+        ],
+        "type": "object",
+        "properties": {
+          "users": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UserDto"
+            }
+          },
+          "metadata": {
+            "$ref": "#/components/schemas/PaginationMetadata"
+          }
+        }
+      },
+      "SuccesfulPersistAvatarIdResponse": {
+        "required": [
+          "message"
+        ],
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "UpdateBoardRequest": {
+        "required": [
+          "board"
+        ],
+        "type": "object",
+        "properties": {
+          "board": {
+            "$ref": "#/components/schemas/BoardDto"
+          }
+        }
+      },
+      "UpdateBoardResponse": {
+        "required": [
+          "board"
+        ],
+        "type": "object",
+        "properties": {
+          "board": {
+            "$ref": "#/components/schemas/BoardDto"
+          }
+        }
+      },
+      "UpdateBuildingRequest": {
+        "required": [
+          "officialID",
+          "name",
+          "floorCount",
+          "color",
+          "height",
+          "width",
+          "depth",
+          "x",
+          "y",
+          "z",
+          "texture"
+        ],
+        "type": "object",
+        "properties": {
+          "officialID": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "floorCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "color": {
+            "type": "string"
+          },
+          "height": {
+            "type": "number",
+            "format": "double"
+          },
+          "width": {
+            "type": "number",
+            "format": "double"
+          },
+          "depth": {
+            "type": "number",
+            "format": "double"
+          },
+          "x": {
+            "type": "number",
+            "format": "double"
+          },
+          "y": {
+            "type": "number",
+            "format": "double"
+          },
+          "z": {
+            "type": "number",
+            "format": "double"
+          },
+          "texture": {
+            "type": "string"
+          }
+        }
+      },
+      "UpdateClassroomRequest": {
+        "required": [
+          "buildingId",
+          "floorLevel",
+          "roomId",
+          "color",
+          "texture",
+          "width",
+          "length",
+          "height",
+          "xCoordinate",
+          "yCoordinate",
+          "zCoordinate"
+        ],
+        "type": "object",
+        "properties": {
+          "buildingId": {
+            "type": "string",
+            "nullable": true
+          },
+          "floorLevel": {
+            "type": "string",
+            "nullable": true
+          },
+          "roomId": {
+            "type": "string"
+          },
+          "color": {
+            "type": "string"
+          },
+          "texture": {
+            "type": "string"
+          },
+          "width": {
+            "type": "string"
+          },
+          "length": {
+            "type": "string"
+          },
+          "height": {
+            "type": "string"
+          },
+          "xCoordinate": {
+            "type": "string"
+          },
+          "yCoordinate": {
+            "type": "string"
+          },
+          "zCoordinate": {
+            "type": "string"
+          }
+        }
+      },
+      "UpdateClassroomResponse": {
+        "required": [
+          "classroom"
+        ],
+        "type": "object",
+        "properties": {
+          "classroom": {
+            "$ref": "#/components/schemas/ClassroomDto"
+          }
+        }
+      },
+      "UpdateLaboratoryRequest": {
+        "required": [
+          "buildingId",
+          "floorLevel",
+          "roomId",
+          "color",
+          "texture",
+          "width",
+          "length",
+          "height",
+          "xCoordinate",
+          "yCoordinate",
+          "zCoordinate"
+        ],
+        "type": "object",
+        "properties": {
+          "buildingId": {
+            "type": "string",
+            "nullable": true
+          },
+          "floorLevel": {
+            "type": "string",
+            "nullable": true
+          },
+          "roomId": {
+            "type": "string"
+          },
+          "color": {
+            "type": "string"
+          },
+          "texture": {
+            "type": "string"
+          },
+          "width": {
+            "type": "string"
+          },
+          "length": {
+            "type": "string"
+          },
+          "height": {
+            "type": "string"
+          },
+          "xCoordinate": {
+            "type": "string"
+          },
+          "yCoordinate": {
+            "type": "string"
+          },
+          "zCoordinate": {
+            "type": "string"
+          }
+        }
+      },
+      "UpdateLaboratoryResponse": {
+        "required": [
+          "laboratory"
+        ],
+        "type": "object",
+        "properties": {
+          "laboratory": {
+            "$ref": "#/components/schemas/LaboratoryDto"
+          }
+        }
+      },
+      "UserDto": {
+        "required": [
+          "id",
+          "name",
+          "isActive",
+          "email"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "isActive": {
+            "type": "boolean"
+          },
+          "email": {
+            "type": "string"
+          }
+        }
+      },
+      "UserIdDto": {
+        "required": [
+          "idKey",
+          "id",
+          "name",
+          "isActive",
+          "email"
+        ],
+        "type": "object",
+        "properties": {
+          "idKey": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "isActive": {
+            "type": "boolean"
+          },
+          "email": {
+            "type": "string"
+          }
+        }
+      },
+      "ValidationErrorResponse": {
+        "required": [
+          "errorMessage"
+        ],
+        "type": "object",
+        "properties": {
+          "errorMessage": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "CreateBoardHandler"
+    },
+    {
+      "name": "ListAllBoardsHandler"
+    },
+    {
+      "name": "ReadBoardByPlateIdHandler"
+    },
+    {
+      "name": "UpdateBoardHandler"
+    },
+    {
+      "name": "DeleteBoardHandler"
+    },
+    {
+      "name": "CreateProjectorHandler"
+    },
+    {
+      "name": "ListAllProjectorsHandler"
+    },
+    {
+      "name": "ListBoardsPagedHandler"
+    },
+    {
+      "name": "FilterBoardsHandler"
+    },
+    {
+      "name": "FilterProjectorHandler"
+    },
+    {
+      "name": "GetBuildingsHandler"
+    },
+    {
+      "name": "CreateBuildingsHandler"
+    },
+    {
+      "name": "DeleteBuildingHandler"
+    },
+    {
+      "name": "UpdateBuildingHandler"
+    },
+    {
+      "name": "CreateLaboratoryHandler"
+    },
+    {
+      "name": "ListLaboratoriesHandler"
+    },
+    {
+      "name": "ListLearningSpaceByBuildingIdHandler"
+    },
+    {
+      "name": "GetLaboratoryHandler"
+    },
+    {
+      "name": "UpdateLaboratoryHandler"
+    },
+    {
+      "name": "DeleteLaboratoryHandler"
+    },
+    {
+      "name": "GetClassroomHandler"
+    },
+    {
+      "name": "DeleteClassroomHandler"
+    },
+    {
+      "name": "UpdateClassroomHandler"
+    },
+    {
+      "name": "CreateClassroomHandler"
+    },
+    {
+      "name": "ListClassroomsHandler"
+    },
+    {
+      "name": "GetLearningSpaceHandler"
+    },
+    {
+      "name": "ListLaboratoriesPagedHandler"
+    },
+    {
+      "name": "ListClassroomsPagedHandler"
+    },
+    {
+      "name": "GetActiveUsersHandler"
+    },
+    {
+      "name": "CreateUsersHandler"
+    },
+    {
+      "name": "SearchUsersByNameHandler"
+    },
+    {
+      "name": "AssignRoleHandler"
+    },
+    {
+      "name": "RegisterUserFromClaimsHandler"
+    },
+    {
+      "name": "ListUserRolesHandler"
+    },
+    {
+      "name": "GetUserByAzureObjectIdentifierHandler"
+    },
+    {
+      "name": "GetCurrentUserPermissionsHandler"
+    },
+    {
+      "name": "ListActiveUsersPagedHandler"
+    },
+    {
+      "name": "PersistAvatarIdHandler"
+    },
+    {
+      "name": "CreatePermissionsHandler"
+    },
+    {
+      "name": "GetAllPermissionsHandler"
+    },
+    {
+      "name": "CreateRoleHandler"
+    },
+    {
+      "name": "ListRolesHandler"
+    },
+    {
+      "name": "AssignPermissionHandler"
+    },
+    {
+      "name": "ListRolePermissionsHandler"
+    },
+    {
+      "name": "SearchRolesHandler"
+    },
+    {
+      "name": "ListRolesPagedHandler"
+    }
+  ]
+}

@@ -1,0 +1,91 @@
+@using UCR.ECCI.PI.ThemePark.Frontend.Domain.Buildings.Entities
+@using UCR.ECCI.PI.ThemePark.Frontend.Presentation.Blazor.Core.Auth.Components
+@using UCR.ECCI.PI.ThemePark.Frontend.Presentation.Blazor.Core.Components.Icons
+
+<table class="table">
+    <thead>
+        <tr>
+            <th class="header-cell-blue">ID</th>
+            <th class="header-cell-blue">Code</th>
+            <th class="header-cell-blue">Name</th>
+            <th class="header-cell-blue">Floor Count</th>
+            <th class="header-cell-blue">Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @if (Buildings is not null && Buildings.Any())
+        {
+            @foreach (var building in Buildings)
+            {
+                <tr>
+				    <td class="data-cell-gray">@building.Id</td>
+                    <td class="data-cell-gray">
+                        <span class="building-code">@building.OfficialId</span>
+                    </td>
+                    <td class="data-cell-gray">@building.Name</td>
+                    <td class="data-cell-gray">@building.FloorCount</td>
+                    <td class="data-cell-gray align-middle">
+                        <div class="d-flex align-items-center gap-1">
+                            <button class="btn btn-details-blue rounded-circle small-circle-action-button align-middle"
+                                    title="Info"
+                                    aria-label="Building Info"
+                                    @onclick="() => OnInfo.InvokeAsync(building.OfficialId)">
+                                <InfoIcon />
+                            </button>
+                            <PermissionGuard RequiredPermission="ManageBuildings">
+                                
+                                <button class="btn btn-edit-green2 rounded-circle small-circle-action-button"
+                                        title="Edit"
+                                        aria-label="Edit building"
+                                        @onclick="() => OnEdit.InvokeAsync(building.OfficialId)">
+                                    <EditIcon />
+                                </button>
+
+                                <button class="btn btn-delete-orange rounded-circle small-circle-action-button"
+                                        title="Delete"
+                                        aria-label="Delete building"
+                                        @onclick="() => OnDelete.InvokeAsync(building.OfficialId)">
+                                    <CrossIcon />
+                                </button>
+                            </PermissionGuard>
+                        </div>
+                    </td>
+                </tr>
+            }
+        }               
+        else
+        {
+            <tr>
+                <td colspan="4" class="data-cell-gray text-center text-muted py-4">
+                    No buildings found.
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<BuildingDetails IsVisible="@isDetailsModalVisible"
+                 OnClose="HideDetails"
+                 Building="@selectedBuilding" />
+
+@code {
+    [Parameter] public IEnumerable<Building> Buildings { get; set; } = Enumerable.Empty<Building>();
+	[Parameter] public EventCallback<string> OnInfo { get; set; }
+    [Parameter] public EventCallback<string> OnEdit { get; set; }
+    [Parameter] public EventCallback<string> OnDelete { get; set; }
+
+    private bool isDetailsModalVisible = false;
+    private Building? selectedBuilding;
+
+    private void ShowDetails(Building building)
+    {
+        selectedBuilding = building;
+        isDetailsModalVisible = true;
+    }
+
+    private void HideDetails()
+    {
+        isDetailsModalVisible = false;
+        selectedBuilding = null;
+    }
+}

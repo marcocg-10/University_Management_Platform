@@ -1,0 +1,30 @@
+/* Grid for 2 items*/
+.dual-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 0.25fr);
+    gap: 50px;
+    margin-top: 10px;
+}
+
+/* individual cell */
+.dual-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.form-control-number {
+    width: 110px;
+}
+
+.bc-sub-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #666;
+    margin-bottom: 0.2rem;
+    margin-left: 0.5rem; /* slightly indented for better visual hierarchy */
+    height: 20px;
+    line-height: 15px; /* vertically centers the text */
+    display: flex;
+    align-items: center;
+}

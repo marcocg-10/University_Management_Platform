@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: c9312651e263a31429f323ddcfc92fa3
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - pencilIcon: {instanceID: 0}
+  - eraserIcon: {instanceID: 0}
+  - colorIcon: {fileID: 2800000, guid: 3e275f40dfe9c6044b3f17e9ec58fef2, type: 3}
+  - brushSizeIcon: {fileID: 2800000, guid: ec65fcdb9f4a88a4c9736374e5b18a43, type: 3}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

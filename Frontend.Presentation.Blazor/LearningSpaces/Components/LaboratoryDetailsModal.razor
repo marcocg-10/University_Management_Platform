@@ -1,0 +1,217 @@
+@using UCR.ECCI.PI.ThemePark.Frontend.Application.Buildings.Services
+@using UCR.ECCI.PI.ThemePark.Frontend.Domain.Buildings.Entities
+@using UCR.ECCI.PI.ThemePark.Frontend.Domain.LearningSpaces.Entities
+@using UCR.ECCI.PI.ThemePark.Frontend.Presentation.Blazor.Core.Auth.Components
+@using UCR.ECCI.PI.ThemePark.Frontend.Presentation.Blazor.Core.Components
+
+@if (IsVisible)
+{
+    <!-- Modal container -->
+    <div class="modal fade show d-block" tabindex="-1" role="dialog" aria-modal="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable" role="document">
+            <div class="modal-content shadow">
+
+                <!-- Header -->
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold">Laboratory Details</h5>
+                    <button type="button" class="btn-close" aria-label="Close" @onclick="OnClose"></button>
+                </div>
+
+                <!-- Body -->
+                <div class="modal-body">
+                    @if (laboratory is null)
+                    {
+                        <p>No laboratory selected.</p>
+                    }
+                    else
+                    {
+                        <!-- Basic fields -->
+                        <!-- Row 1: Building info -->
+                        <div class="row g-3 mb-3">
+                            <!-- Building ID -->
+                            <div class="col-auto">
+                                <label class="form-label fw-bold">Building ID</label>
+                                <div class="form-control-plaintext border rounded p-2 bg-light lab-building-id-field">
+                                    @(_isBuildingLoading ? "Loading building..." : BuildingOfficialId)
+                                </div>
+                            </div>
+
+                            <!-- Building Name -->
+                            <div class="col">
+                                <label class="form-label fw-bold">Building Name</label>
+                                <div class="form-control-plaintext border rounded p-2 bg-light lab-building-name-field">
+                                    @(_isBuildingLoading ? "Loading building..." : BuildingName)
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Row 2: Floor + Classroom ID -->
+                        <div class="row g-3 mb-3">
+                            <!-- Floor of the learning space -->
+                            <div class="col-auto">
+                                <label class="form-label fw-bold">Floor Level</label>
+                                <div class="form-control-plaintext border rounded p-2 bg-light lab-floor-field">
+                                    @(laboratory.FloorLevel?.ToString() ?? "Empty")
+                                </div>
+                            </div>
+
+                            <!-- Laboratory ID -->
+                            <div class="col">
+                                <label class="form-label fw-bold">Laboratory ID</label>
+                                <div class="form-control-plaintext border rounded p-2 bg-light lab-roomid-field">
+                                    @laboratory.RoomId
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr class="my-2" />
+
+                        <!-- Row 3: Color / Texture -->
+                        <div class="d-flex align-items-center mb-3" style="gap: 16px;">
+                            <!-- Color -->
+                            <div class="d-flex flex-column align-items-start">
+                                <label class="form-label fw-bold mb-1">Color</label>
+                                <div class="color-box"
+                                     style="background-color: @laboratory.Color.Value;">
+                                </div>
+                            </div>
+
+                            <!-- Texture -->
+                            <div class="d-flex flex-column align-items-start">
+                                <label class="form-label fw-bold mb-1">Texture</label>
+
+                                @if (!string.IsNullOrWhiteSpace(laboratory.Texture.Value))
+                                {
+                                    var textureUrl = GetTextureUrl(laboratory.Texture.Value);
+
+                                    <div class="texture-preview-box">
+                                        <img src="@textureUrl"
+                                             alt="Laboratory texture preview"
+                                             class="texture-image" />
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="form-control-plaintext border rounded p-2 bg-light">
+                                        No texture selected.
+                                    </div>
+                                }
+                            </div>
+                        </div>
+
+                        <hr class="my-2" />
+
+                        <h6 class="fw-bold mb-3">Dimensions (meters)</h6>
+
+                        <!-- Dimension fields (horizontal layout) -->
+                        <div class="d-flex lab-dimensions-row mb-2">
+                            <div class="d-flex flex-column me-4">
+                                <label class="form-label">Width</label>
+                                <div class="form-control-plaintext border rounded p-2 bg-light lab-dimension-field">
+                                    @laboratory.Dimensions.Width.ToString("F2")
+                                </div>
+                            </div>
+
+                            <div class="d-flex flex-column me-4">
+                                <label class="form-label">Height</label>
+                                <div class="form-control-plaintext border rounded p-2 bg-light lab-dimension-field">
+                                    @laboratory.Dimensions.Height.ToString("F2")
+                                </div>
+                            </div>
+
+                            <div class="d-flex flex-column">
+                                <label class="form-label">Length</label>
+                                <div class="form-control-plaintext border rounded p-2 bg-light lab-dimension-field">
+                                    @laboratory.Dimensions.Length.ToString("F2")
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-backdrop fade show"></div>
+}
+
+@code {
+    [Inject] private NavigationManager Nav { get; set; } = default!;
+    [Inject] private IBuildingService BuildingService { get; set; } = default!;
+
+    private const string _assetsBasePath = "assets/learningspaces/textures/";
+    private string GetTextureUrl(string fileName) => $"{Nav.BaseUri}{_assetsBasePath}{fileName}";
+
+    /// <summary>
+    /// Building associated with the laboratory.
+    /// </summary>
+    private Building? _building;
+
+    /// <summary>
+    /// Indicates whether the building info is loading.
+    /// </summary>
+    private bool _isBuildingLoading;
+
+    /// <summary>
+    /// Indicates whether the modal is visible.
+    /// </summary>
+    [Parameter] public bool IsVisible { get; set; }
+
+    /// <summary>
+    /// Event callback triggered when the modal is requested to close.
+    /// </summary>
+    [Parameter] public EventCallback OnClose { get; set; }
+
+    /// <summary>
+    /// The laboratory entity whose details are to be displayed.
+    /// </summary>
+    [Parameter] public Laboratory? laboratory { get; set; }
+
+    /// <summary>
+    /// Property to set the building's official ID.
+    /// </summary>
+    private string BuildingOfficialId =>
+        _building?.OfficialId ?? (laboratory?.BuildingId?.ToString() ?? "Unknown");
+
+    /// <summary>
+    /// Property to set the building's name.
+    /// </summary>
+    private string BuildingName =>
+        _building?.Name ?? "Unknown";
+
+    /// <summary>
+	/// Method to get the building's display text.
+    /// </summary>
+    /// <returns>Empty task</returns>
+    protected override async Task OnParametersSetAsync()
+    {
+		// If laboratory is null, clear the building info.
+        if (laboratory is null)
+        {
+            _building = null;
+            _isBuildingLoading = false;
+            return;
+        }
+
+        _isBuildingLoading = true;
+        _building = null;
+        StateHasChanged();  // Refresh UI to show loading state.
+        
+        // Fetch building details.
+        try
+        {
+            var buildings = await BuildingService.GetBuildingsAsync();
+            _building = buildings.FirstOrDefault(b => b.Id == laboratory.BuildingId);
+        }
+        catch (Exception ex)
+        {
+            _building = null;
+        }
+        finally
+        {
+            _isBuildingLoading = false;
+            StateHasChanged();  // Refresh UI after loading.
+        }
+    }
+}

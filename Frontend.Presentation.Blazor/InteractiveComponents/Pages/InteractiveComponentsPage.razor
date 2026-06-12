@@ -1,0 +1,419 @@
+@page "/interactive-components"
+@attribute [Authorize]
+@rendermode InteractiveServer
+@attribute [StreamRendering]
+
+@using Microsoft.AspNetCore.Components.Forms
+@using UCR.ECCI.PI.ThemePark.Frontend.Application.InteractiveComponents.Services
+@using UCR.ECCI.PI.ThemePark.Frontend.Domain.InteractiveComponents.Entities
+@using UCR.ECCI.PI.ThemePark.Frontend.Domain.InteractiveComponents.Exceptions
+@using UCR.ECCI.PI.ThemePark.Frontend.Presentation.Blazor.Core.Components.Icons
+@using UCR.ECCI.PI.ThemePark.Frontend.Presentation.Blazor.InteractiveComponents.Components
+@using UCR.ECCI.PI.ThemePark.Frontend.Presentation.Blazor.InteractiveComponents.Models
+@using UCR.ECCI.PI.ThemePark.Frontend.Presentation.Blazor.Core.Auth.Components
+@using Blazored.Toast
+
+@inject IToastService ToastService
+@inject IInteractiveComponentService InteractiveComponentService
+
+<PageTitle>Interactive Components</PageTitle>
+
+<ProtectedPageBase RequiredPermission="ListInterComponents">
+    <!-- HEADER SECTION
+         Displays the page title and toggles for visible sections.
+    -->
+    <div class="d-flex align-items-center justify-content-between flex-wrap mb-2">
+        <h1 class="fw-bold mb-0">Interactive Components</h1>
+    </div>
+
+    <!-- TABS -->
+    <div class="interactive-components-tabs mb-3">
+        <button type="button"
+                class="interactive-components-tab @(SelectedTab == InteractiveComponentsTab.Boards ? "active" : "")"
+                @onclick="@(() => SelectTab(InteractiveComponentsTab.Boards))">
+            Boards
+        </button>
+
+        <button type="button"
+                class="interactive-components-tab @(SelectedTab == InteractiveComponentsTab.Projectors ? "active" : "")"
+                @onclick="@(() => SelectTab(InteractiveComponentsTab.Projectors))">
+            Projectors
+        </button>
+    </div>
+
+
+    <!-- BOARDS SECTION
+         Displays list of boards and allows creation via modal.
+    -->
+    @if (SelectedTab == InteractiveComponentsTab.Boards)
+    {
+        <section>
+            <!-- Row 1: Boards title -->
+            <div class="mb-2">
+                <h2 class="fw-bold mb-0">Boards</h2>
+            </div>
+
+            <!-- Row 2: Search bar and Add button aligned horizontally -->
+            <div class="d-flex justify-content-between align-items-center mb-2">
+
+                <div class="input-group w-50 mb-2">
+                    <input class="form-control search-input-gray"
+                           placeholder="e.g: 111111"
+                           @bind="_searchTerm"
+                           @bind:event="oninput"
+                           @onchange="OnSearchChanged"
+                           disabled="@_isLoadingBoards" />
+
+                    <button class="input-group-text bg-white border-0"
+                            style="cursor: pointer;"
+                            @onclick="() => OnSearchChanged()"
+                            disabled="@_isLoadingBoards">
+                        <SearchIcon />
+                    </button>
+                </div>
+
+                <PermissionGuard RequiredPermission="ManageInterComponents">
+                    <button class="btn btn-ucr-blue-lg"
+                            @onclick="OpenCreate"
+                            disabled="@_isLoadingBoards">
+                        Add
+                    </button>
+                </PermissionGuard>
+            </div>
+           
+            <!-- Boards Table -->
+            <Loading IsLoading="_isLoadingBoards">
+                @if (_boards?.Any() == true)
+                {
+                    <!-- Displays the list of boards -->
+                    <BoardTable Boards="_boards"
+                                OnEdit="OpenEditBoard"
+                                OnDelete="AskDeleteBoard"
+                                LearningSpaces="_availableLearningSpaces"
+                                Buildings="_availableBuildings" />
+                }
+                else if (!_isLoadingBoards && string.IsNullOrEmpty(_errorMessage))
+                {
+                    <!-- Message when no boards exist -->
+                    <p class="text-muted fst-italic">No boards found.</p>
+                }
+            </Loading>
+
+            <!-- Pagination footer -->
+            <div class="d-flex justify-content-center mt-2">
+                <div class="d-flex align-items-center justify-content-center gap-2 flex-nowrap text-nowrap pagination-inline">
+                    <div class="d-flex align-items-center gap-2">
+                        <label class="form-label fw-bold mb-0 me-1">Page Size:</label>
+
+                        <!-- Dropdown pagination -->
+                        <select class="form-select form-select-sm"
+                                style="width: 110px;"
+                                @bind="_selectedPageSizeOption"
+                                disabled="@_isLoadingBoards">
+                            <option value="10">10</option>
+                            <option value="20">20</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                            <option value="custom">Custom</option>
+                        </select>
+
+                        <!-- Custom size input (visible only when 'custom' is selected) -->
+                        @if (_selectedPageSizeOption == "custom")
+                        {
+                            <input type="number"
+                                   class="form-control form-control-sm"
+                                   style="width: 70px;"
+                                   min="1"
+                                   max="100"
+                                   @bind="_customPageSize"
+                                   @onblur="ApplyCustomPageSize"
+                                   disabled="@_isLoadingBoards" />
+                        }
+                    </div>
+
+                    <span class="tab-spacer"></span>
+
+                    <div class="d-flex align-items-center gap-2">
+                        <button class="btn btn-sm pagination-nav-btn"
+                                @onclick="PrevPageAsync"
+                                disabled="@(!CanPrev || _isLoadingBoards)">
+                            Previous
+                        </button>
+
+                        @foreach (var p in PageNumbers)
+                        {
+                            <button class="btn btn-sm pagination-number-btn @(p == CurrentPage ? "active" : "")"
+                                    @onclick="@(() => GoToPage(p))"
+                                    disabled="@_isLoadingBoards">
+                                @p
+                            </button>
+                        }
+
+                        <button class="btn btn-sm pagination-nav-btn"
+                                @onclick="NextPageAsync"
+                                disabled="@(!CanNext || _isLoadingBoards)">
+                            Next
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+    }
+
+
+    <!-- PROJECTORS SECTION
+         Displays list of projectors (placeholder implementation).
+    -->
+    @if (SelectedTab == InteractiveComponentsTab.Projectors)
+    {
+        <section>
+            <!-- Row 1: Projectors title -->
+            <div class="mb-2">
+                <h2 class="fw-bold mb-0">Projectors</h2>
+            </div>
+
+            <!-- Row 2: Search bar and Add button aligned horizontally -->
+            <div class="d-flex justify-content-between align-items-center mb-2">
+
+                <div class="input-group w-50 mb-2">
+                    <input class="form-control search-input-gray"
+                           placeholder="e.g: 222222"
+                           @bind="_searchTermProjector"
+                           @bind:event="oninput"
+                           @onchange="OnSearchProjectorChanged"
+                           disabled="@_isLoadingProjectors" />
+
+                    <button class="input-group-text bg-white border-0"
+                            style="cursor: pointer;"
+                            @onclick="() => OnSearchProjectorChanged()"
+                            disabled="@_isLoadingProjectors">
+                        <SearchIcon />
+                    </button>
+                </div>
+
+                <PermissionGuard RequiredPermission="ManageInterComponents">
+                    <button class="btn btn-ucr-blue-lg"
+                            @onclick="OpenCreateProjector"
+                            disabled="@_isLoadingProjectors">
+                        Add
+                    </button>
+                </PermissionGuard>
+            </div>
+
+            <!-- Projectors Table -->
+            <Loading IsLoading="_isLoadingProjectors">
+                @if (_projectors?.Any() == true)
+                {
+                    <!-- Displays the list of projectors -->
+                    <ProjectorTable Projectors="_projectors"
+                                    LearningSpaces="_availableLearningSpaces"
+                                    Buildings="_availableBuildings" />
+                }
+                else if (!_isLoadingProjectors && string.IsNullOrEmpty(_errorMessageProjector))
+                {
+                    <!-- Message when no projectors exist -->
+                    <p class="text-muted fst-italic">No projectors found.</p>
+                }
+            </Loading>
+
+            <!-- Pagination footer for Projectors -->
+            <div class="d-flex justify-content-center mt-2">
+                <div class="d-flex align-items-center justify-content-center gap-2 flex-nowrap text-nowrap pagination-inline">
+                    <div class="d-flex align-items-center gap-2">
+                        <label class="form-label fw-bold mb-0 me-1">Page Size:</label>
+
+                        <!-- Dropdown pagination -->
+                        <select class="form-select form-select-sm"
+                                style="width: 110px;"
+                                @bind="_selectedPageSizeOptionProjector"
+                                disabled="@_isLoadingProjectors">
+                            <option value="10">10</option>
+                            <option value="20">20</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                            <option value="custom">Custom</option>
+                        </select>
+
+                        <!-- Custom size input (visible only when 'custom' is selected) -->
+                        @if (_selectedPageSizeOptionProjector == "custom")
+                        {
+                            <input type="number"
+                                   class="form-control form-control-sm"
+                                   style="width: 70px;"
+                                   min="1"
+                                   max="100"
+                                   @bind="_customPageSizeProjector"
+                                   @onblur="ApplyCustomPageSizeProjector"
+                                   disabled="@_isLoadingProjectors" />
+                        }
+                    </div>
+
+                    <span class="tab-spacer"></span>
+
+                    <div class="d-flex align-items-center gap-2">
+                        <button class="btn btn-sm pagination-nav-btn"
+                                @onclick="PrevPageProjectorAsync"
+                                disabled="@(!CanPrevProjector || _isLoadingProjectors)">
+                            Previous
+                        </button>
+
+                        @foreach (var p in PageNumbersProjector)
+                        {
+                            <button class="btn btn-sm pagination-number-btn @(p == CurrentPageProjector ? "active" : "")"
+                                    @onclick="@(() => GoToPageProjector(p))"
+                                    disabled="@_isLoadingProjectors">
+                                @p
+                            </button>
+                        }
+
+                        <button class="btn btn-sm pagination-nav-btn"
+                                @onclick="NextPageProjectorAsync"
+                                disabled="@(!CanNextProjector || _isLoadingProjectors)">
+                            Next
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+    }
+
+
+    <!-- BOARD CREATION MODAL
+         Displays modal dialog for adding a new Board entity.
+    -->
+    <BoardCreateModal @ref="_createBoardModalRef"
+                      Open="@showCreateModal"
+                      Model="@form"
+                      OnCancel="@CloseCreate"
+                      OnSubmit="@CreateBoard" />
+
+    <!-- BOARD DELETION MODAL -->
+    <BoardDeleteModal IsOpen="@_showDelete"
+                      IsOpenChanged="v => _showDelete = v"
+                      BoardId="@_pendingDeleteId"
+                      OnConfirm="@ConfirmDeleteBoard"
+                      OnCancel="@CancelDeleteBoard" />
+
+    <!--
+        BOARD UPDATION MODAL
+        Displays modal dialog for updating a Board Entity.
+    -->
+    <BoardUpdateModal @ref="_updateBoardModalRef"
+                      Open="@_showEdit"
+                      Model="@_editForm"
+                      OnCancel="@CloseEditBoard"
+                      OnSubmit="@ConfirmEditBoard" />
+
+    <ProjectorCreateModal @ref="_createProjectorModalRef"
+                          Open="@showCreateProjectorModal"
+                          Model="@projectorForm"
+                          OnCancel="@CloseCreateProjector"
+                          OnSubmit="@CreateProjector" />
+</ProtectedPageBase>
+
+<style>
+    /* Tabs design */
+    .interactive-components-tabs {
+        display: inline-flex;
+        border-radius: 12px;
+    }
+
+    /* Individual tab design */
+    .interactive-components-tab {
+        border: none;
+        padding: 0.45rem 1.25rem;
+        font-weight: 700;
+        font-size: 1rem;
+        cursor: pointer;
+        border-radius: 10px;
+        background-color: #f2f2f2;
+        color: #9f9c9c;
+        transition: all 0.15s ease-in-out;
+    }
+
+        /* Selected tab design */
+        .interactive-components-tab.active {
+            background-color: #204c6f;
+            color: #fff;
+        }
+
+        /* Hover effect for unselected tabs */
+        .interactive-components-tab:hover:not(.active) {
+            background-color: #9f9c9c;
+            color: #fff;
+        }
+
+    .pagination-inline {
+        white-space: nowrap;
+        overflow-x: auto;
+        max-width: 100%;
+    }
+
+    .tab-spacer {
+        flex: 0 0 2.5rem;
+        display: inline-block;
+    }
+
+    /* Numbered pagination buttons: default state */
+    .pagination-inline .pagination-number-btn {
+        background-color: #eeefef;
+        color: #214b6e;
+        border: 1px solid #a6a6a6;
+        font-weight: 600;
+    }
+
+    .pagination-inline .pagination-number-btn:hover:not(:disabled),
+    .pagination-inline .pagination-number-btn:focus:not(:disabled) {
+        background-color: #eeefef;
+        color: #214b6e;
+        border-color: #a6a6a6;
+    }
+
+    .pagination-inline .pagination-number-btn.active {
+        background-color: #214b6e;
+        color: #ffffff;
+        border-color: #214b6e;
+        font-weight: 700;
+    }
+
+    .pagination-inline .pagination-number-btn.active:hover:not(:disabled),
+    .pagination-inline .pagination-number-btn.active:focus:not(:disabled) {
+        background-color: #214b6e;
+        color: #ffffff;
+        border-color: #214b6e;
+    }
+
+    /* Previous/Next buttons with same format */
+    .pagination-inline .pagination-nav-btn {
+        background-color: #eeefef;
+        color: #214b6e;
+        border: 1px solid #a6a6a6;
+        font-weight: 700;
+    }
+
+    .pagination-inline .pagination-nav-btn:hover:not(:disabled),
+    .pagination-inline .pagination-nav-btn:focus:not(:disabled) {
+        background-color: #eeefef;
+        color: #214b6e;
+        border-color: #a6a6a6;
+    }
+
+    .pagination-inline .pagination-nav-btn:disabled {
+        background-color: #eeefef;
+        color: #9f9c9c;
+        border-color: #a6a6a6;
+        font-weight: 700;
+        opacity: 1;
+        cursor: not-allowed;
+    }
+
+    .search-input-gray {
+        background-color: #eeefef; /* light gray */
+        border-color: #a6a6a6;
+    }
+
+    .search-input-gray:focus {
+        background-color: #eeefef;
+        box-shadow: 0 0 0 0.25rem rgba(33, 75, 110, 0.15);
+    }
+</style>

@@ -1,0 +1,7 @@
+﻿CREATE TABLE buildings.Building (
+    Id INT NOT NULL IDENTITY(1,1),
+    OfficialId NVARCHAR(30) UNIQUE NOT NULL,
+    Name NVARCHAR(200) UNIQUE NOT NULL,
+    FloorCount INT NOT NULL DEFAULT 1,
+    CONSTRAINT PK_Building PRIMARY KEY (Id)
+);

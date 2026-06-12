@@ -1,0 +1,240 @@
+﻿@using Microsoft.AspNetCore.Components.Forms
+@using UCR.ECCI.PI.ThemePark.Frontend.Application.Users.Services
+@using UCR.ECCI.PI.ThemePark.Frontend.Domain.Roles.Entity
+@using UCR.ECCI.PI.ThemePark.Frontend.Domain.Users.Entities
+@using UCR.ECCI.PI.ThemePark.Frontend.Domain.Users.Exceptions
+@using UCR.ECCI.PI.ThemePark.Frontend.Presentation.Blazor.Core.Components
+@using UCR.ECCI.PI.ThemePark.Frontend.Presentation.Blazor.Core.Components.Icons
+@using UCR.ECCI.PI.ThemePark.Frontend.Presentation.Blazor.Roles.Components
+
+@inject IUserService UserService
+@inject IToastService ToastService
+
+<Modal IsVisible="@IsVisible"
+       OnClose="OnClose"
+       ContentClass="@ContentClass"
+       ContentStyle="@ContentStyle"
+       OverlayClass="@OverlayClass"
+       OverlayStyle="@OverlayStyle">
+    <h4><strong>User details</strong></h4>
+
+    @if (UserObject is null)
+    {
+        <p>No user selected.</p>
+    }
+    else
+    {
+        <!-- ID -->
+        <div class="mb-3">
+            <label class="form-label ">Official ID</label>
+            <div class="readonly-box ">@UserObject.Id.Value</div>
+        </div>
+
+        <!-- Name -->
+        <div class="mb-3">
+            <label class="form-label">Name</label>
+            <div class="readonly-box">@UserObject.Name.Value</div>
+        </div>
+
+        <!-- Email -->
+        <div class="mb-3">
+            <label class="form-label">Email</label>
+            <div class="readonly-box">@UserObject.Email.Value</div>
+        </div>
+
+        <!-- Status -->
+        <div class="mb-3">
+            <label class="form-label">Status</label>
+            <div class="readonly-box">@(UserObject.IsActive ? "Active" : "Inactive")</div>
+        </div>
+
+        <!-- Roles -->
+        <div class="mt-4 w-100">
+            <div class="mb-3">
+                <label class="form-label">Assigned Roles</label>
+            </div>
+
+            <!-- Role dropdown selector below the title -->
+            <div class="d-flex flex-column gap-3 mb-3">
+                <RadzenStack Orientation="Orientation.Vertical"
+                             Gap="0.2rem"
+                             class="d-flex flex-column gap-3 mb-3">
+                    <RadzenStack Orientation="Orientation.Horizontal"
+                                 AlignItems="AlignItems.Center"
+                                 Gap="0.5rem">
+                        <RadzenDropDown @bind-Value=@selectedRoles
+                                        Data=@AvailableRoles
+                                        TextProperty="Name.Value"
+                                        ValueProperty="Id"
+                                        Name="PermissionDropDown"
+                                        Multiple=true
+                                        SelectAllText="Select All"
+                                        Placeholder="Select roles to assign"
+                                        MaxSelectedLabels="2"
+                                        SelectedItemsText="roles selected"                                      
+                                        Style="flex-grow: 2; min-width: 250px;" >
+                            <EmptyTemplate>
+                                <div class="text-muted fst-italic text-center py-2" style="font-size: 0.9rem;">
+                                     No available roles 
+                                </div>
+                            </EmptyTemplate>
+                        </RadzenDropDown>
+                        <RadzenButton Click=@HandleAssignSelectedRoles
+                                      Icon="add"
+                                      Class="rz-border-radius-4"
+                                      Style="background-color: #204c6f; border-color: #204c6f;"
+                                      Size="ButtonSize.Small"
+                                      Disabled="@(!selectedRoles.Any())"
+                                      title="Assign Selected Roles" />
+                    </RadzenStack>
+                </RadzenStack>
+            </div>
+
+            @if (Roles is null || !Roles.Any())
+            {
+                <p class="text-muted text-center">No roles assigned.</p>
+            }
+            else
+            {
+                <ul class="list-group">
+                    @foreach (var role in Roles)
+                    {
+                        <li class="list-group-item d-flex justify-content-between align-items-center"
+                            style="background-color: #f5f5f5;">
+                            <span>@role.Name.Value</span>
+                        </li>
+                    }
+                </ul>
+            }
+        </div>
+
+    }
+</Modal>
+
+@code {
+    [Parameter] public bool IsVisible { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public EventCallback OnAssign { get; set; }
+    [Parameter] public User? UserObject { get; set; }
+
+	[Parameter] public IEnumerable<Role>? AvailableRoles { get; set; }
+    [Parameter] public IEnumerable<Role>? Roles { get; set; }
+
+    [Parameter] public string? OverlayClass { get; set; }
+    [Parameter] public string? OverlayStyle { get; set; }
+    [Parameter] public string? ContentClass { get; set; }
+    [Parameter] public string? ContentStyle { get; set; }
+
+	
+
+    // Toast notifications to the parent
+    [Parameter] public EventCallback<ToastRequest> OnNotify { get; set; }
+
+    private IList<int> selectedRoles { get; set; } = new List<int>();
+
+    private bool _saving;
+
+    protected override void OnParametersSet()
+    {
+        // Reset selected roles when modal opens
+        selectedRoles.Clear();
+    }
+
+    
+    private async Task HandleAssignSelectedRoles()
+    {
+        if (UserObject is null)
+            return;
+
+        if (!selectedRoles.Any())
+        {
+            ToastService.ShowWarning("Please select at least one role to assign.");
+            return;
+        }
+
+        if (_saving) return;
+        _saving = true;
+
+        var selected = AvailableRoles!.Where(p => selectedRoles.Contains(p.Id)).ToList();
+
+        int successCount = 0;
+        List<string> errors = new();
+        var pendingToasts = new List<ToastRequest>();
+
+        foreach (var role in selected)
+        {
+            try
+            {
+                var errorMessage = await UserService.AssociateRoleAsync(UserObject, role);
+                if (errorMessage is null)
+                {
+                    successCount++;
+                    ToastService.ShowSuccess($"Role '{role.Name.Value}' assigned to user '{UserObject.Name.Value}'.");
+                }
+                else
+                {
+                    errors.Add($"{role.Name.Value}: {errorMessage}");
+                    ToastService.ShowError($"Failed to assign '{role.Name.Value}' to user '{UserObject.Name.Value}': {errorMessage}");
+                }    
+            } 
+            catch (UserNotFoundException ex )
+            {
+                errors.Add($"{role.Name.Value}: {ex.Message}");
+                ToastService.ShowError($"Failed to assign '{role.Name.Value}' to role '{UserObject.Name.Value}': {ex.Message}");
+
+            }
+            catch (AssignableRoleNotFoundException ex)
+            {
+                errors.Add($"{role.Name.Value}: {ex.Message}");
+                ToastService.ShowError($"Failed to assign '{role.Name.Value}' to user '{UserObject.Name.Value}': {ex.Message}");
+			}
+            catch (RoleAlreadyAssignedException ex)
+            {
+                errors.Add($"{role.Name.Value}: {ex.Message}");
+                ToastService.ShowError($"Failed to assign '{role.Name.Value}' to user '{UserObject.Name.Value}': {ex.Message}");
+			}
+            catch (UserException ex)
+            {
+                errors.Add($"{role.Name.Value}: {ex.Message}");
+                ToastService.ShowError($"Failed to assign '{role.Name.Value}' to user '{UserObject.Name.Value}': {ex.Message}");
+			}
+            catch (ArgumentNullException ex)
+            {
+                errors.Add($"{role.Name.Value}: An unexpected error occurred.");
+                ToastService.ShowError($"Failed to assign '{role.Name.Value}' to user '{UserObject.Name.Value}': An unexpected error occurred.");
+            }
+            catch (Exception ex)
+            {
+                errors.Add($"{role.Name.Value}: An unexpected error occurred.");
+                ToastService.ShowError($"Failed to assign '{role.Name.Value}' to user '{UserObject.Name.Value}': An unexpected error occurred.");
+			}
+        
+        }
+
+        _saving = false;
+
+        // Build final summary toast
+        if (errors.Any())
+        {
+	        ToastService.ShowWarning($" Successful: {successCount} |  Failed: {errors.Count} ");
+        }
+        else
+        {
+            ToastService.ShowSuccess($" Successfully assigned {successCount} role(s)!");
+        }
+
+		await OnAssign.InvokeAsync();
+        //await CloseModal();
+
+        // Emit queued toasts after modal is closed for better UX
+        foreach (var toast in pendingToasts)
+        {
+            await OnNotify.InvokeAsync(toast);
+        }
+    }
+
+    private async Task CloseModal()
+    {
+        await OnClose.InvokeAsync();
+    }
+}

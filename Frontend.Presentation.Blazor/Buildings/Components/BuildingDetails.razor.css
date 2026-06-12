@@ -1,0 +1,35 @@
+.color-box {
+    width: 80px;
+    height: 80px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    display: inline-block;
+    vertical-align: middle;
+    margin-top: 4px;
+}
+
+.texture-preview-box {
+    width: 80px;
+    height: 80px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 4px;
+}
+
+.texture-image {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: cover;
+}
+
+.modal-dialog {
+    max-width: 1200px;
+}
+
+.form-content-container {
+    width: 50%;
+}

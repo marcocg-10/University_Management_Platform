@@ -1,0 +1,276 @@
+﻿/* Create Board Modal Stylesheet */
+
+/* Covers the entire viewport with a semi-transparent background 
+   to focus attention on the dialog content. */
+.bc-overlay {
+    position: fixed;
+    inset: 0; /* shorthand for top, right, bottom, left = 0 */
+    background: rgba(0, 0, 0, 0.35); /* dark overlay with opacity */
+    display: grid;
+    place-items: center; /* centers the dialog horizontally and vertically */
+    z-index: 100; /* sits above most page elements */
+    overflow: hidden; /* ensures overlay itself can scroll on small screens */
+}
+
+/* Dialog: widen and allow near full viewport width on large screens */
+.bc-dialog {
+    position: relative;
+    width: 1000px;           /* wider default */
+    max-width: 95vw;         /* responsive cap */
+    max-height: 90vh;
+    overflow-y: auto;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 14px 50px rgba(0, 0, 0, 0.25); /* subtle depth effect */
+    padding: 24px 28px 16px 28px; /* inner spacing */
+}
+
+/* Only show scrollbars when content exceeds 90% of viewport height */
+@media (max-height: 850px) {
+    .bc-dialog {
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+}
+
+/* Scrollbar styling */
+.bc-dialog::-webkit-scrollbar {
+    width: 8px;
+}
+
+.bc-dialog::-webkit-scrollbar-thumb {
+    background: #bbb;
+    border-radius: 4px;
+}
+
+.bc-dialog::-webkit-scrollbar-thumb:hover {
+    background: #999;
+}
+
+/* Defines the main header text inside the modal. */
+.bc-title {
+    margin: 0 0 16px 0;
+    font-weight: 800;
+    font-size: 22px;
+    text-align: left;
+}
+
+/* Simple “X” icon button positioned in the top-right corner. */
+.bc-close {
+    position: absolute;
+    right: 10px;
+    top: 8px;
+    border: 0;
+    background: transparent;
+    font-size: 20px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+/* Creates a clean, vertical layout for form fields. */
+.bc-form-vertical {
+    display: flex;
+    flex-direction: column;
+    gap: 4px; /* spacing between fields */
+}
+
+/* Style applied to each input label. */
+.bc-field label {
+    font-weight: 700;
+    margin-bottom: 6px;
+    display: block;
+}
+
+/* Used for sections like Dimensions or Coordinates
+   where three numeric inputs appear side by side.
+*/
+.bc-triplet {
+    display: grid;
+    grid-template-columns: repeat(3, 0.2fr);
+    gap: 20px;
+    align-items: start;
+}
+
+/* Remove all extra spacing stacking up */
+.bc-triplet-cell {
+    display: flex;
+    flex-direction: column;
+}
+
+.bc-triplet .form-control-number {
+    width: 110px;
+}
+
+/* Smaller labels displayed above each InputNumber
+   in triplet sections (e.g., “Width”, “Height”, “Depth”).
+*/
+.bc-sub-label {
+    font-size: 0.8rem;
+    font-weight: 400;
+    color: #666;
+    margin-bottom: 0.2rem;
+    margin-left: 0.5rem; /* slightly indented for better visual hierarchy */
+    height: 20px;
+    line-height: 15px; /* vertically centers the text */
+    display: flex;
+    align-items: center;
+}
+
+/* Defines spacing and layout for the bottom action button. */
+.bc-actions {
+    margin-top: 18px;
+}
+
+.bc-actions--full {
+    display: block;
+}
+
+/* Makes the “Add” button stretch across the modal width. */
+.btn-ucr-blue--full {
+    display: block;
+    width: 100%;
+}
+
+/* Provides consistent styling when Bootstrap’s .form-control 
+   class isn’t available or overridden.
+*/
+.form-control {
+    width: 100%;
+    padding: 0.52rem 0.65rem;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+}
+
+.form-control-plateid {
+    width: 110px;
+}
+
+.texture-grid {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.texture-option {
+    width: 110px;
+    height: 110px;
+    object-fit: cover;
+    border: 2px solid rgba(0,0,0,.2);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: transform .07s ease-in-out, box-shadow .07s ease-in-out, border-color .07s;
+}
+
+.texture-option:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(0,0,0,.12);
+}
+
+.texture-option:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(13, 110, 253, .25);
+}
+
+.texture-option.selected {
+    border-color: #0d6efd; /* bootstrap primary */
+    box-shadow: 0 0 0 3px rgba(13, 110, 253, .25);
+}
+
+/* Grid for 2 items*/
+.dual-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 0.25fr);
+    gap: 50px;
+    margin-top: 10px;
+}
+
+/* individual cell */
+.dual-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* inline row containing the color input + preview square */
+.color-picker-row {
+    display: flex;
+    align-items: stretch;
+    gap: 10px;
+}
+
+/* small preview square */
+.color-preview {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    border: 1px solid #000;
+    display: inline-block;
+}
+
+/* Red border when invalid */
+.input-invalid {
+    border-color: #dc3545 !important;
+    box-shadow: 0 0 0 0.15rem rgba(220, 53, 69, 0.25);
+}
+
+/* Green border when valid */
+.input-valid {
+    border-color: #198754 !important;
+    box-shadow: 0 0 0 0.15rem rgba(25, 135, 84, 0.25);
+}
+
+/* Disabled state for full-width button */
+.btn-ucr-blue.btn-ucr-blue--full:disabled {
+    background-color: #cecdcd;
+    border-color: #cecdcd;
+}
+
+/* Side-by-side layout: form left, minimap right */
+.bc-layout {
+    display: grid;
+    grid-template-columns: 1.1fr 1fr;  /* form slightly larger than minimap */
+    gap: 24px;
+    align-items: start;
+}
+
+/* Ensure left and right columns stack nicely on small screens */
+@media (max-width: 900px) {
+    .bc-layout {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Optional: keep the minimap area tidy */
+.bc-layout-right .bc-field {
+    /* give the minimap some visual separation from the form */
+    padding-left: 4px;
+}
+
+.bc-layout-right .bc-field .interactive-minimap-container {
+    height: 360px;        /* adjust to your desired preview size */
+    max-height: 40vh;     /* keep it responsive */
+    overflow: hidden;
+    display: block;
+}
+
+/* Center actions at bottom */
+.bc-actions {
+    margin-top: 18px;
+}
+
+.bc-actions--center {
+    display: flex;
+    justify-content: center;
+}
+
+.bc-actions--center .btn {
+    min-width: 160px; /* readable target size */
+}
+
+/* Remove full-width constraint from the Add button */
+.btn-ucr-blue--full {
+    /* no longer used; keep rule for backward compatibility */
+    display: block;
+    width: 100%;
+}

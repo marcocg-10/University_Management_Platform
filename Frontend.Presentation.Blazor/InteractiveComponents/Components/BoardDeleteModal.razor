@@ -1,0 +1,152 @@
+﻿@namespace UCR.ECCI.PI.ThemePark.Frontend.Presentation.Blazor.InteractiveComponents.Components
+@using UCR.ECCI.PI.ThemePark.Frontend.Presentation.Blazor.Core.Components.Icons
+
+@* 
+===========================================================
+Component: BoardDeleteModal
+===========================================================
+*@
+
+@if (IsOpen)
+{
+    <!--
+        Main container for the popup.
+        Uses a fixed position to stay centered on screen.
+        aria-modal and role attributes improve accessibility.
+    -->
+    <!-- Added overlay to enable scrolling and background dimming -->
+    <div class="bd-overlay" @onclick="Cancel">
+        <div class="bd-card" @onclick:stopPropagation role="dialog" aria-modal="false">
+
+            <!-- HEADER SECTION -->
+            <!-- Contains the title ("Delete"), icon, and close button -->
+            <div class="bd-header">
+
+                <!-- Title and icon wrapper -->
+                <div class="bd-title-wrap">
+                    <!-- Small circular info icon -->
+                    <DangerIcon Size="18" Class="bd-icon" />
+
+                    <!-- Title text -->
+                    <span class="bd-title">Delete</span>
+                </div>
+
+                <!-- "×" button to close the modal -->
+                <button class="bd-close"
+                        @onclick="Cancel"
+                        aria-label="Close">
+                    ✕
+                </button>
+            </div>
+
+            <!-- SUBTITLE SECTION -->
+            <!-- Displays the board ID being deleted -->
+            <div class="bd-subtitle">
+                Board ID: <strong class="bd-hl">@BoardId</strong>
+            </div>
+
+            <!-- BODY SECTION -->
+            <!-- Contains the confirmation message -->
+            <div class="bd-body">
+                Are you sure you want to permanently delete?
+            </div>
+
+            <!-- FOOTER SECTION -->
+            <!-- Contains the confirmation and cancel button-->
+            <div class="bd-footer">
+                <button class="bd-btn bd-btn-danger"
+                        @onclick="Confirm">
+                    Delete
+                </button>
+
+                <button class="bd-btn bd-btn-cancel"
+                        @onclick="Cancel">
+                    Cancel
+                </button>
+
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    /* ===========================================================
+       PARAMETERS
+       These values are provided by the parent component.
+       =========================================================== */
+
+    /// <summary>
+    /// Controls whether the modal is visible or hidden.
+    /// True = visible, False = hidden.
+    /// </summary>
+    [Parameter] public bool IsOpen { get; set; }
+
+    /// <summary>
+    /// Event triggered when the IsOpen state changes.
+    /// Enables two-way binding with the parent.
+    /// </summary>
+    [Parameter] public EventCallback<bool> IsOpenChanged { get; set; }
+
+    /// <summary>
+    /// The ID of the board being deleted, displayed in the subtitle.
+    /// </summary>
+    [Parameter] public string? BoardId { get; set; }
+
+    /// <summary>
+    /// Event triggered when the user confirms the deletion.
+    /// The parent component handles the actual delete logic.
+    /// </summary>
+    [Parameter] public EventCallback OnConfirm { get; set; }
+
+    /// <summary>
+    /// Event triggered when the user cancels or closes the modal.
+    /// </summary>
+    [Parameter] public EventCallback OnCancel { get; set; }
+
+    // Used to prevent duplicate cancel event invocation.
+    private bool _isClosing = false;
+
+    /* ===========================================================
+       PRIVATE METHODS
+       These handle internal modal logic.
+       =========================================================== */
+
+    /// <summary>
+    /// Handles the "Delete" button click.
+    /// Invokes the parent OnConfirm event and closes the modal.
+    /// </summary>
+    private async Task Confirm()
+    {
+        await OnConfirm.InvokeAsync();
+        await Close();
+    }
+
+    /// <summary>
+    /// Handles the "×" button click or overlay click.
+    /// Invokes the parent OnCancel event and closes the modal,
+    /// ensuring it runs only once per interaction.
+    /// </summary>
+    private async Task Cancel()
+    {
+        if (_isClosing)
+            return;
+
+        _isClosing = true;
+
+        await OnCancel.InvokeAsync();
+        await Close();
+
+        _isClosing = false;
+    }
+
+    /// <summary>
+    /// Closes the modal by setting IsOpen to false
+    /// and notifying the parent component (if subscribed).
+    /// </summary>
+    private async Task Close()
+    {
+        IsOpen = false;
+        if (IsOpenChanged.HasDelegate)
+            await IsOpenChanged.InvokeAsync(IsOpen);
+    }
+}

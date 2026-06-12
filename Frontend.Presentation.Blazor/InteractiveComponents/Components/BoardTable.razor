@@ -1,0 +1,135 @@
+@using UCR.ECCI.PI.ThemePark.Frontend.Domain.Buildings.Entities
+@using UCR.ECCI.PI.ThemePark.Frontend.Domain.InteractiveComponents.Entities
+@using UCR.ECCI.PI.ThemePark.Frontend.Domain.LearningSpaces.Entities
+@using UCR.ECCI.PI.ThemePark.Frontend.Presentation.Blazor.Core.Auth.Components
+@using UCR.ECCI.PI.ThemePark.Frontend.Presentation.Blazor.Core.Components
+@using UCR.ECCI.PI.ThemePark.Frontend.Presentation.Blazor.Core.Components.Icons
+
+@if (Boards is not null && Boards.Any())
+{
+    <table class="table align-middle">
+        <thead>
+            <tr>
+                <th class="header-cell-blue" style="width: 200px;">ID</th>
+                <th class="header-cell-blue" style="width: 200px;">Building</th>
+                <th class="header-cell-blue" style="width: 200px;">Room</th>
+                <th class="header-cell-blue" style="width: 200px;">Color</th>
+                <th class="header-cell-blue" style="width: 200px;">Marker Color</th>
+                <th class="header-cell-blue" style="width: 200px;">Actions</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            @foreach (var board in Boards)
+            {
+                var currentLearningSpace = LearningSpaces.FirstOrDefault(ls => ls.Id == board.LearningSpaceId);
+                var currentBuilding = currentLearningSpace != null
+                ? Buildings.FirstOrDefault(b => b.Id == currentLearningSpace.BuildingId)
+                : null;
+
+                <tr>
+                    <td class="data-cell-gray align-middle">@board.PlateId.Value</td>
+                    <td class="data-cell-gray align-middle">
+                        @if (currentBuilding == null)
+                        {
+                            <div class="bc-field">
+                                No building assigned
+                            </div>
+                        }
+                        else
+                        {
+                            @currentBuilding.Name
+                        }
+                    </td>
+                    <td class="data-cell-gray align-middle">
+                        @if(currentLearningSpace == null)
+                        {
+                            <div class="bc-field">
+                                No learning space assigned
+                            </div>
+                        } else
+                        {
+                            @currentLearningSpace.RoomId
+                        }
+                    </td>
+                    <td class="data-cell-gray">
+                        <span class="color-swatch align-middle"
+                              style="--swatch-color:@board.Color.Value"
+                              aria-label="Board color preview"
+                              title="@board.Color.Value"></span>
+                    </td>
+                    <td class="data-cell-gray">
+                        <span class="color-swatch align-middle"
+                              style="--swatch-color:@board.MarkerColor.Value"
+                              aria-label="Marker color preview"
+                              title="@board.MarkerColor.Value"></span>
+                    </td>
+                    <td class="data-cell-gray align-middle">
+                        <div class="d-flex align-items-center gap-1">
+                            <button class="btn btn-details-blue rounded-circle d-flex align-items-center justify-content-center p-0"
+                                    style="width: 32px; height: 32px;"
+                                    @onclick="() => ShowBoardDetails(board)">
+                                <InfoIcon />
+                            </button>
+                            <PermissionGuard RequiredPermission="ManageInterComponents">
+                                <button class="btn btn-edit-green2 rounded-circle small-circle-action-button"
+                                        style="width: 32px; height: 32px;"
+                                        title="Edit"
+                                        aria-label="Edit board"
+                                        @onclick="() => OnEdit.InvokeAsync(board.PlateId.Value)">
+                                    <EditIcon />
+                                </button>
+                                <button class="btn btn-delete-orange rounded-circle small-circle-action-button"
+                                        style="width: 32px; height: 32px;"
+                                        title="Delete"
+                                        aria-label="Delete board"
+                                        @onclick="() => OnDelete.InvokeAsync(board.PlateId.Value)">
+                                    <CrossIcon />
+                                </button>
+                            </PermissionGuard>
+                            
+                        </div>
+                    </td>
+                </tr>
+            }   
+        </tbody>
+    </table>
+}
+else
+{
+    <p class="text-muted fst-italic">No boards found.</p>
+}
+
+<!--
+    Board Details Modal
+-->
+<BoardReadModal IsVisible="@IsBoardModalVisible"
+                OnClose="HideBoardDetails"
+                Board="@SelectedBoard"
+                LearningSpaces="@LearningSpaces"
+                Buildings="@Buildings" />
+
+@code {
+
+    [Parameter] public IEnumerable<Board> Boards { get; set; } = Enumerable.Empty<Board>();
+    [Parameter] public EventCallback<string> OnEdit { get; set; }
+    [Parameter] public EventCallback<string> OnDelete { get; set; }
+    [Parameter] public IEnumerable<LearningSpace> LearningSpaces { get; set; } = Enumerable.Empty<LearningSpace>();
+    [Parameter] public IEnumerable<Building> Buildings { get; set; } = Enumerable.Empty<Building>();
+    private bool IsBoardModalVisible { get; set; } = false;
+    private Board? SelectedBoard { get; set; }
+
+    // Shows the board details modal for the selected board
+    private void ShowBoardDetails(Board board)
+    {
+        SelectedBoard = board;
+        IsBoardModalVisible = true;
+    }
+
+    // Hides/Closes the board details modal
+    private void HideBoardDetails()
+    {
+        IsBoardModalVisible = false;
+        SelectedBoard = null;
+    }
+}

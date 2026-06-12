@@ -1,0 +1,55 @@
+﻿.header-cell-blue {
+    background-color: #204c6f;
+    color: white;
+}
+
+.data-cell-gray {
+    background-color: #f0f0f0;
+    color: #000;
+    height: 55px;
+}
+
+.small-circle-action-button {
+    width: 1.5rem;
+    height: 1.5rem;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-edit-green2 {
+    color: #fff;
+    background-color: #609000;
+    border-color: #609000;
+}
+
+.btn-edit-green2:hover {
+    color: #fff;
+    background-color: #a0c456;
+    border-color: #a0c456;
+}
+
+.btn-delete-orange {
+    color: #fff;
+    background-color: #B14212;
+    border-color: #B14212;
+}
+
+.btn-delete-orange:hover {
+    color: #fff;
+    background-color: #d18045;
+    border-color: #d18045;
+}
+
+.color-swatch {
+    display: inline-block;
+    width: 27px;
+    height: 27px;
+    background-color: var(--swatch-color, transparent);
+    border: 1px solid var(--bs-border-color, #ced4da);
+    border-radius: 6px;
+    vertical-align: middle;
+    justify-content: center;
+    align-items: center;
+}

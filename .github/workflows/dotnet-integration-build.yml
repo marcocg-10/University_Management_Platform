@@ -1,0 +1,66 @@
+name: CI Build, Integration Tests and Publish
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-test-publish:
+    name: Build, Integration Tests and Publish
+    runs-on: self-hosted
+    env:
+      CONFIG: Release
+      DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
+      DOTNET_NOLOGO: 1
+      DOTNET_CLI_TELEMETRY_OPTOUT: 1
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET 9 SDK (with NuGet cache)
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.0.x
+          cache: true
+          cache-dependency-path: '**/*.csproj'
+
+      - name: Restore tools (Kiota)
+        run: dotnet tool restore
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build solution
+        id: build
+        run: dotnet build --no-restore --configuration $env:CONFIG
+
+      - name: Run Integration Tests
+        if: success()
+        run: dotnet test --no-build --configuration $env:CONFIG --filter "FullyQualifiedName~Integration"
+
+      - name: Publish Backend.Api
+        if: success()
+        run: dotnet publish "Backend.Api/UCR.ECCI.PI.ThemePark.Backend.Api.csproj" -c $env:CONFIG -o artifacts/presentation-api -p:ErrorOnDuplicatePublishOutputFiles=false
+
+      - name: Publish Frontend.Blazor
+        if: success()
+        run: dotnet publish "Frontend.Blazor/UCR.ECCI.PI.ThemePark.Frontend.Blazor.csproj" -c $env:CONFIG -o artifacts/blazor -p:ErrorOnDuplicatePublishOutputFiles=false
+
+      - name: Upload published artifacts
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: published-bundles
+          path: |
+            artifacts/presentation-api
+            artifacts/blazor
+          if-no-files-found: error

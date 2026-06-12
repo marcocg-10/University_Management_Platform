@@ -1,0 +1,233 @@
+@page "/buildings"
+@attribute [Authorize]
+@attribute [StreamRendering]
+@rendermode InteractiveServer
+@using System.Linq
+@using UCR.ECCI.PI.ThemePark.Frontend.Application.Buildings.Services
+@using UCR.ECCI.PI.ThemePark.Frontend.Domain.Buildings.Entities
+@using UCR.ECCI.PI.ThemePark.Frontend.Domain.Core.Exceptions
+@using UCR.ECCI.PI.ThemePark.Frontend.Presentation.Blazor.Buildings.Components
+@using UCR.ECCI.PI.ThemePark.Frontend.Presentation.Blazor.Core.Auth.Components
+@inject IToastService ToastService
+@inject IBuildingService BuildingService
+
+<PageTitle>Buildings</PageTitle>
+<ProtectedPageBase RequiredPermission="ListBuildings">
+<div class="d-flex align-items-center justify-content-between flex-wrap mb-2">
+    <h1 class="fw-bold mb-0">Buildings</h1>
+</div>
+
+<section>
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <h2 class="fw-bold mb-0"></h2>
+        <PermissionGuard RequiredPermission="ManageBuildings">
+            <button class="btn btn-ucr-blue-lg" @onclick="ToggleModal">Add</button>
+        </PermissionGuard>
+        <Modal 
+            IsVisible="@isModalOpen"
+            OnClose="ToggleModal"
+            ContentClass="modal-content"
+         >
+            <NewBuildingForm 
+                OnValidSubmit="ToggleModal"
+                />
+         </Modal>
+    </div>
+
+    <Loading IsLoading="_isLoading">
+        @if (_buildings?.Any() == true)
+        {
+            <BuildingTable Buildings="_buildings"
+                           OnInfo="HandleInfo"
+                           OnEdit="HandleEdit"
+                           OnDelete="OnRowDeleteRequested" />
+        }
+        else
+        {
+            <p class="text-muted fst-italic mt-3">No buildings found.</p>
+        }
+    </Loading>
+</section>
+
+<Modal 
+    IsVisible="@isDialogOpen"
+    OnClose="HandleDialogCancel"
+    ContentClass="modal-content">
+    <UpdateBuildingDialog
+        IsOpen="isDialogOpen"
+        IsBusy="isDialogBusy"
+        ErrorMessage="dialogError"
+        BuildingToEdit="buildingToEdit"
+        OnCancel="HandleDialogCancel"
+        OnConfirm="HandleDialogConfirmAsync" />
+</Modal>
+
+<BuildingDeleteModal
+    IsOpen="@_showDeleteDialog"
+    IsOpenChanged="@((bool v) => _showDeleteDialog = v)"
+    OfficialId="@_selectedOfficialId"
+    Name="@_selectedName"
+    OnCancel="CloseDeleteDialog"
+    OnConfirm="ConfirmDeleteAsync" />
+
+<BuildingDetails IsVisible="@_isInfoOpen"
+                 OnClose="@CloseInfo"
+                 Building="@_selectedBuilding" />
+</ProtectedPageBase>
+
+<style>
+    .modal-content {
+        width: 60vw;
+        max-width: 92vw;
+        max-height: 90vh;
+        overflow: auto;
+    }
+
+    th.header-cell-blue:last-child,
+    td.action-cell {
+        min-width: 120px;
+        white-space: nowrap;
+    }
+</style>
+
+@code {
+    bool _isLoading = true;
+    IEnumerable<Building> _buildings = [];
+
+    bool isDialogOpen;
+    bool isDialogBusy;
+    string? dialogError;
+    Building? buildingToEdit;
+
+    bool isModalOpen = false;
+
+    bool _showDeleteDialog = false;
+    bool _isDeleting = false;
+    string _deleteError = string.Empty;
+    string? _selectedOfficialId;
+    string? _selectedName;
+
+    bool _isInfoOpen = false;
+    Building? _selectedBuilding;
+
+    protected async override Task OnInitializedAsync()
+    {
+        try
+        {
+            _buildings = await BuildingService.GetBuildingsAsync();
+            _isLoading = false;
+        }
+        catch (ValidationException ex)
+        {
+            _buildings = [];
+        }
+    }
+
+    private void HandleInfo(string officialId)
+    {
+        _selectedBuilding = _buildings.FirstOrDefault(b => b.OfficialId == officialId);
+        _isInfoOpen = true;
+    }
+
+    private void CloseInfo()
+    {
+        _isInfoOpen = false;
+        _selectedBuilding = null;
+    }
+
+    private void HandleEdit(string officialId)
+    {
+        buildingToEdit = _buildings.FirstOrDefault(b => b.OfficialId == officialId);
+        dialogError = null;
+        isDialogOpen = true;
+    }
+
+    private void HandleDialogCancel()
+    {
+        if (isDialogBusy) return;
+        isDialogOpen = false;
+        buildingToEdit = null;
+        dialogError = null;
+    }
+
+    private async Task HandleDialogConfirmAsync(Building updatedBuilding)
+    {
+        if (isDialogBusy) return;
+        isDialogBusy = true;
+        dialogError = null;
+
+        try
+        {
+            await BuildingService.UpdateBuildingAsync(updatedBuilding);
+            _buildings = await BuildingService.GetBuildingsAsync();
+            isDialogOpen = false;
+            buildingToEdit = null;
+        }
+        catch (ValidationException ex)
+        {
+            ToastService.ShowError(ex.Message);
+        }
+        finally
+        {
+            isDialogBusy = false;
+            StateHasChanged();
+        }
+    }
+
+    private void OnRowDeleteRequested(string officialId)
+    {
+        _deleteError = string.Empty;
+        _selectedOfficialId = officialId;
+        _selectedName = _buildings
+            .FirstOrDefault(b => string.Equals(b.OfficialId, officialId, StringComparison.OrdinalIgnoreCase))
+            ?.Name;
+        _showDeleteDialog = true;
+    }
+
+    private void CloseDeleteDialog()
+    {
+        if (_isDeleting) return;
+        _showDeleteDialog = false;
+        _selectedOfficialId = null;
+        _selectedName = null;
+    }
+
+    private async Task ConfirmDeleteAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_selectedOfficialId))
+        {
+            _deleteError = "No building is selected for deletion.";
+            return;
+        }
+
+        _deleteError = string.Empty;
+        _isDeleting = true;
+        try
+        {
+            await BuildingService.DeleteBuildingAsync(_selectedOfficialId);
+
+            _buildings = _buildings
+                .Where(b => !string.Equals(b.OfficialId, _selectedOfficialId, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+
+            _showDeleteDialog = false;
+            _selectedOfficialId = null;
+            _selectedName = null;
+        }
+        catch (ValidationException ex)
+        {
+            ToastService.ShowError(ex.Message);
+        }
+        finally
+        {
+            _isDeleting = false;
+            StateHasChanged();
+        }
+    }
+
+    private void ToggleModal()
+    {
+        isModalOpen = !isModalOpen;
+    }
+
+}

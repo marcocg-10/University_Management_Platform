@@ -1,0 +1,382 @@
+﻿@using System.ComponentModel.DataAnnotations
+@using UCR.ECCI.PI.ThemePark.Frontend.Domain.Users.Entities
+@using UCR.ECCI.PI.ThemePark.Frontend.Domain.Users.ValueObjects
+@using Microsoft.AspNetCore.Components.Forms
+@using UCR.ECCI.PI.ThemePark.Frontend.Domain.Users.Exceptions
+@using System.Linq
+
+@inject UCR.ECCI.PI.ThemePark.Frontend.Application.Users.Services.IUserService UserService
+@inject IToastService ToastService
+
+<Modal IsVisible="@IsVisible"
+       OnClose="CloseModal"
+       ContentClass="@ContentClass"
+       ContentStyle="@ContentStyle"
+       OverlayClass="@OverlayClass"
+       OverlayStyle="@OverlayStyle">
+
+    <h4><strong>Add new user</strong></h4>
+
+    <EditForm EditContext="_editContext" id="create-user-form" OnValidSubmit="HandleSave" OnInvalidSubmit="HandleInvalidSubmit">
+        <DataAnnotationsValidator />
+
+        <div class="mb-3">
+            <CustomInput Id="official-id"
+                         Label="Official ID"
+                         BoldLabel="true"
+                         Placeholder="e.g. C12345"
+                         CssClass="form-control"
+                         Required="true"
+                         IsValid="@isValidOficial"
+                         ErrorMessage="@officialIdError"
+                         OnBlur="@inputOfficialIdValueChanged"
+                         OnFocus="@clearIdMessages"
+                         @bind-Value="userModel.OfficialId" />
+        </div>
+
+        <div class="mb-3">
+            <CustomInput Id="user-name"
+                         Label="Name"
+                         BoldLabel="true"
+                         Placeholder="e.g Juan Viquez"
+                         CssClass="form-control"
+                         Required="true"
+                         IsValid="@isValidName"
+                         ErrorMessage="@nameError"
+                         OnBlur="@inputNameValueChanged"
+                         OnFocus="@clearNameMessages"
+                         @bind-Value="userModel.Name" />
+        </div>
+
+        <div class="mb-3">
+            <CustomInput Id="user-email"
+                         Type="email"
+                         Label="Email"
+                         BoldLabel="true"
+                         Placeholder="e.g. name@domain.com"
+                         CssClass="form-control"
+                         Required="true"
+                         IsValid="@isValidEmail"
+                         ErrorMessage="@emailError"
+                         OnBlur="@inputEmailValueChanged"
+                         OnFocus="@clearEmailMessages"
+                         @bind-Value="userModel.Email" />
+        </div>
+
+        <div class="form-check mb-3">
+            <InputCheckbox class="form-check-input" @bind-Value="isActive" />
+            <label class="form-check-label">Active</label>
+        </div>
+
+        <CustomButton Type="CustomButton.ButtonType.Submit"
+                      Disabled="@_notValidated"
+                      Block="true"
+                      Form="create-user-form">
+            @if (_saving)
+            {
+                <span>Adding...</span>
+            }
+            else
+            {
+                <span>Add</span>
+            }
+        </CustomButton>
+    </EditForm>
+
+</Modal>
+
+@code {
+    [Parameter] public bool IsVisible { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public User? User { get; set; }
+
+    [Parameter] public EventCallback<User> OnSaved { get; set; }
+
+    [Parameter] public string? OverlayClass { get; set; }
+    [Parameter] public string? OverlayStyle { get; set; }
+    [Parameter] public string? ContentClass { get; set; }
+    [Parameter] public string? ContentStyle { get; set; }
+
+    private ValidationMessageStore _validationMessageStore = default!;
+    private bool isValidOficial = false;
+    private bool isValidName = false;
+    private bool isValidEmail = false;
+    private bool isActive = true;
+    private bool _saving;
+    private bool _notValidated;
+
+    public class UserInputModel
+    {
+        [Required(ErrorMessage = "Official ID field is required.")]
+        public string OfficialId { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Name field is required.")]
+        public string Name { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Email field is required.")]
+        public string Email { get; set; } = string.Empty;
+    }
+
+	// define user Model and EditContext
+    private UserInputModel userModel = new();
+    private EditContext _editContext = null!;
+
+	// define field error messages for each attribute
+    private string officialIdError = string.Empty;
+    private string nameError = string.Empty;
+    private string emailError = string.Empty;
+    private string searchTerm = string.Empty;
+
+	// clear all field errors
+    private void ResetFieldErrors()
+    {
+        officialIdError = string.Empty;
+        nameError = string.Empty;
+        emailError = string.Empty;
+    }
+
+	// update the overall validation state based on individual field validity
+    private void UpdateValidationState()
+    {
+        _notValidated = !(isValidOficial && isValidName && isValidEmail &&
+                         !string.IsNullOrWhiteSpace(userModel.OfficialId) &&
+                         !string.IsNullOrWhiteSpace(userModel.Name) &&
+                         !string.IsNullOrWhiteSpace(userModel.Email));
+        StateHasChanged();
+    }
+
+	// initialize EditContext and ValidationMessageStore
+    protected override void OnInitialized()
+    {
+        _editContext = new EditContext(userModel);
+        _validationMessageStore = new ValidationMessageStore(_editContext);
+
+        _notValidated = true;
+        _editContext.OnValidationStateChanged += (s, e) => UpdateFieldErrors();
+        _editContext.OnFieldChanged += (s, e) => UpdateFieldErrors();
+    }
+
+    private void UpdateFieldErrors()
+    {
+        officialIdError = _editContext.GetValidationMessages(new FieldIdentifier(userModel, nameof(userModel.OfficialId))).FirstOrDefault() ?? string.Empty;
+        nameError = _editContext.GetValidationMessages(new FieldIdentifier(userModel, nameof(userModel.Name))).FirstOrDefault() ?? string.Empty;
+        emailError = _editContext.GetValidationMessages(new FieldIdentifier(userModel, nameof(userModel.Email))).FirstOrDefault() ?? string.Empty;
+        StateHasChanged();
+    }
+
+	// update validation state on invalid submit
+    private Task HandleInvalidSubmit(EditContext e)
+    {
+        UpdateFieldErrors();
+        _notValidated = true;
+        _saving = false;
+        return Task.CompletedTask;
+    }
+
+    private async Task HandleSave()
+    {
+        if (_saving) return;
+
+        // Ensure the current EditContext has latest validation state
+        _editContext.Validate();
+        UpdateFieldErrors();
+
+		// just to make sure that values are valid before proceeding
+        if (!UserId.TryCreate(userModel.OfficialId, out var officialIdObj, out string? errorUserId) || officialIdObj is null)
+        {
+            isValidOficial = false;
+            officialIdError = errorUserId ?? "Invalid Official Id: must be between 5 and 30 characters" +
+                " (letters, numbers, hyphens) and must not start or end with a hyphen.";
+            _editContext?.NotifyValidationStateChanged();
+            ToastService.ShowWarning(officialIdError);
+            _saving = false;
+            UpdateValidationState();
+            return;
+        }
+
+        if (!Email.TryCreate(userModel.Email, out var emailObj, out string? errorEmail) || emailObj is null)
+        {
+            isValidEmail = false;
+            emailError = errorEmail ?? "Invalid email format.";
+            _editContext?.NotifyValidationStateChanged();
+            ToastService.ShowWarning(emailError);
+            _saving = false;
+            UpdateValidationState();
+            return;
+        }
+
+        if (!UserName.TryCreate(userModel.Name, out var nameObj, out var nameErrorStr) || nameObj is null)
+        {
+            isValidName = false;
+            nameError =  "Invalid name: must be between 3 and 50 characters (letters, spaces)" +
+                " and must not start with a whitespace.";
+            _editContext?.NotifyValidationStateChanged();
+            ToastService.ShowWarning(nameError);
+            _saving = false;
+            UpdateValidationState();
+            return;
+        }
+
+        try
+        {
+            var created = await UserService.CreateUserAsync(
+                officialIdObj.Value,
+                nameObj.Value,
+                isActive,
+                emailObj.Value
+            );
+
+            ResetFieldErrors();
+            _editContext?.NotifyValidationStateChanged();
+
+            ToastService.ShowSuccess("User created successfully.");
+            await OnSaved.InvokeAsync(created);
+            await OnClose.InvokeAsync();
+            ResetForm();
+        }
+        catch (DuplicateEmailException ex) 
+        {
+			// Handle duplicate email error
+            emailError = ex.Message;
+            isValidEmail = false;
+			// track the field error in the ValidationMessageStore
+            var emailField = new FieldIdentifier(userModel, nameof(userModel.Email));
+            _validationMessageStore.Add(emailField, emailError);
+
+            _editContext?.NotifyValidationStateChanged();
+            await InvokeAsync(StateHasChanged);
+        }
+        catch (DuplicateIdException ex)
+        {
+			// Handle duplicate official ID error
+            officialIdError = ex.Message;
+            isValidOficial = false;
+			// track the field error in the ValidationMessageStore
+            var idField = new FieldIdentifier(userModel, nameof(userModel.OfficialId));
+            _validationMessageStore.Add(idField, officialIdError);
+
+            _editContext?.NotifyValidationStateChanged();
+            await InvokeAsync(StateHasChanged);
+        }
+        catch (UserException)
+        {   
+			// Handle general user-related exceptions (will appear in the toast)
+            ToastService.ShowError("An unexpected user-related error occurred. Please try again later.");
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError(ex.Message ?? "An unexpected error occurred while creating the user.");
+        }
+        finally
+        {
+            _notValidated = true;
+            _saving = false;
+        }
+    }
+
+    private async Task CloseModal()
+    {
+        await OnClose.InvokeAsync();
+        ResetForm();
+    }
+
+    private void ResetForm()
+    {
+        userModel.OfficialId = string.Empty;
+        userModel.Name = string.Empty;
+        userModel.Email = string.Empty;
+        isActive = true;
+        ResetFieldErrors();
+        _notValidated = true;
+        _editContext.NotifyValidationStateChanged();
+    }
+
+    private async Task clearEmailMessages()
+    {
+		// clear the error message every time the user focuses the email input
+        emailError = string.Empty;
+        var emailField = new FieldIdentifier(userModel, nameof(userModel.Email));
+        _validationMessageStore.Clear(emailField);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task clearIdMessages()
+    {
+		// clear the error message every time the user focuses the official ID input
+        officialIdError = string.Empty;
+        var idField = new FieldIdentifier(userModel, nameof(userModel.OfficialId));
+        _validationMessageStore.Clear(idField);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task clearNameMessages()
+    {
+		// clear the error message every time the user focuses the name input
+        nameError = string.Empty;
+        var nameField = new FieldIdentifier(userModel, nameof(userModel.Name));
+        _validationMessageStore.Clear(nameField);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    // Input-level live validation handlers (adapted from roles component pattern)
+    private async Task inputOfficialIdValueChanged(string input)
+    {
+        officialIdError = string.Empty;
+        isValidOficial = false;
+        if (string.IsNullOrEmpty(input)) 
+        {
+            officialIdError = "Official Id cannot be empty.";
+            UpdateValidationState();
+            return;
+        }
+        if (!UserId.TryCreate(input, out _, out var error))
+        {
+            officialIdError = error ?? "Invalid Official Id.";
+            UpdateValidationState();
+            return;
+        }
+        isValidOficial = true;
+		UpdateValidationState(); // make sure to update the overall validation state
+    }
+
+    private async Task inputEmailValueChanged(string input)
+    {
+        emailError = string.Empty;
+        isValidEmail = false;
+        if (string.IsNullOrEmpty(input)) 
+        {
+            emailError = "Email cannot be empty.";
+            UpdateValidationState();
+            return; 
+        
+        }
+        if (!Email.TryCreate(input, out _, out var error))
+        {
+            emailError = error ?? "Invalid email format.";
+            UpdateValidationState();
+            return;
+        }
+        isValidEmail = true;
+        UpdateValidationState();
+    }
+
+    private async Task inputNameValueChanged(string input)
+    {
+        nameError = string.Empty;
+        isValidName = false;
+        if (string.IsNullOrEmpty(input)) 
+        {
+            nameError = "Name cannot be empty.";
+            UpdateValidationState();
+            return; 
+        }
+        if (!UserName.TryCreate(input, out _, out var error))
+        {
+            nameError = error ?? "Invalid name.";
+            UpdateValidationState();
+            return;
+        }
+        isValidName = true;
+        UpdateValidationState();
+    }
+}

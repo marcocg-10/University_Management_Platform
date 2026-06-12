@@ -1,0 +1,150 @@
+@using UCR.ECCI.PI.ThemePark.Frontend.Application.Buildings.Services
+@using UCR.ECCI.PI.ThemePark.Frontend.Domain.LearningSpaces.Entities
+@using UCR.ECCI.PI.ThemePark.Frontend.Presentation.Blazor.Core.Auth.Components
+@using UCR.ECCI.PI.ThemePark.Frontend.Presentation.Blazor.Core.Components
+@using UCR.ECCI.PI.ThemePark.Frontend.Presentation.Blazor.Core.Components.Icons
+
+@inject IBuildingService BuildingService
+
+@if (Laboratories is not null && Laboratories.Any())
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th class="header-cell-blue">Building</th>
+                <th class="header-cell-blue">Floor Level</th>
+                <th class="header-cell-blue">Room ID</th>
+                <th class="header-cell-blue">Actions</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            @foreach (var laboratory in Laboratories)
+            {
+                <tr>
+                    <!-- Use dictionary to get Buildings' names by their ID. -->
+                    <td class="data-cell-gray">
+                        @if (!_buildingsLoaded)
+                        {
+                            <span class="text-muted fst-italic">Loading building...</span>
+                        }
+                        else
+                        {
+                            @(
+                                laboratory.BuildingId.HasValue &&
+                                _buildingNames.TryGetValue(laboratory.BuildingId.Value, out var name)
+                                ? name
+                                : "Unknown"
+                                )
+                            }
+                    </td>
+                    <td class="data-cell-gray">@laboratory.FloorLevel</td>
+                    <td class="data-cell-gray">@laboratory.RoomId</td>
+                    <td class="data-cell-gray">
+                        <div class="d-flex gap-1">
+                            <button class="btn btn-details-blue rounded-circle d-flex align-items-center justify-content-center p-0"
+                                    style="width: 32px; height: 32px;"
+                                    title="Details"
+                                    aria-label="View laboratory details"
+                                    @onclick="() => ShowModal(laboratory)">
+                                <InfoIcon />
+                            </button>
+
+                            <PermissionGuard RequiredPermission="ManageLearningSpaces">
+                                <button class="btn btn-edit-green2 rounded-circle small-circle-action-button"
+                                        style="width: 32px; height: 32px;"
+                                        title="Edit"
+                                        aria-label="Edit laboratory"
+                                        @onclick="() => OnUpdate.InvokeAsync(laboratory.Id)">
+                                    <EditIcon/>
+                                </button>
+
+                                <button class="btn btn-delete-orange rounded-circle small-circle-action-button"
+                                        style="width: 32px; height: 32px;"
+                                        title="Delete"
+                                        aria-label="Delete laboratory"
+                                        @onclick="() => OnDelete.InvokeAsync(laboratory.Id)">
+                                    <CrossIcon/>
+                                </button> 
+                            </PermissionGuard>
+                        </div>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+else
+{
+    <p class="text-muted fst-italic">No laboratories found.</p>
+}
+
+<LaboratoryDetailsModal IsVisible="@isLaboratoriesDetailsModalVisible" OnClose="HideModal"
+                         Laboratory="@selectedLaboratory" />
+
+@code {
+    /// <summary>
+    /// List of laboratories to be displayed in the table.
+    /// </summary>
+    [Parameter] public IEnumerable<Laboratory> Laboratories { get; set; } = Enumerable.Empty<Laboratory>();
+
+    /// <summary>
+    /// Callback invoked when the edit button is clicked for a laboratory.
+    /// </summary>
+    [Parameter] public EventCallback<int> OnUpdate { get; set; }
+
+    /// <summary>
+    /// Callback invoked when the delete button is clicked for a laboratory.
+    /// </summary>
+    [Parameter] public EventCallback<int> OnDelete { get; set; }
+
+    /// <summary>
+    /// Dictionary to cache building names by their IDs.
+    /// </summary>
+    private Dictionary<int, string> _buildingNames = new();
+
+    /// <summary>
+	/// Flag to indicate if buildings have been loaded.
+    /// </summary>
+    private bool _buildingsLoaded = false;
+
+    /// <summary>
+    /// Indicates whether the laboratory details modal is visible.
+    /// </summary>
+    private bool isLaboratoriesDetailsModalVisible = false;
+
+    /// <summary>
+    /// The selected laboratory for viewing details.
+    /// </summary>
+    private Laboratory? selectedLaboratory;
+
+    /// <summary>
+    /// Shows the laboratory details modal for the specified laboratory.
+    /// </summary>
+    private void ShowModal(Laboratory laboratory)
+    {
+        selectedLaboratory = laboratory;
+        isLaboratoriesDetailsModalVisible = true;
+    }
+
+    /// <summary>
+    /// Hides the laboratory details modal.
+    /// </summary>
+    public void HideModal()
+    {
+        isLaboratoriesDetailsModalVisible = false;
+        selectedLaboratory = null;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Load building for display purposes.
+        var buildings = await BuildingService.GetBuildingsAsync();
+
+        // Cache building names.
+        _buildingNames = buildings.ToDictionary(b => b.Id, b => b.Name);
+
+        // Mark buildings as loaded.
+        _buildingsLoaded = true;
+    }
+}

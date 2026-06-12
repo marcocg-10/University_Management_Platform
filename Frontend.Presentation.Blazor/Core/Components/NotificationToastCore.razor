@@ -1,0 +1,73 @@
+@* Taken from InteractiveComponents/Components/NotificationToast.razor *@
+
+@if (Visible)
+{
+    @* 
+       Toast Placement Logic:
+       
+       If the toast is inside a modal, use `position-absolute` so 
+       it remains visually above the modal content.
+       Otherwise, render it as `position-fixed` for page-level display.
+    *@
+
+    @if (InsideModal)
+    {
+        <!-- Toast inside modal (absolute positioning) -->
+        <div class="toast-container position-absolute top-0 end-0 p-3" style="z-index: 9999;">
+            <div class="toast show text-bg-@Type border-0 shadow">
+                <div class="d-flex align-items-center justify-content-between px-3 py-2">
+                    <span>@Message</span>
+                    <button type="button"
+                            class="btn-close btn-close-white ms-3"
+                            @onclick="OnClose">
+                    </button>
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <!-- Toast fixed to the top-right corner of the page -->
+        <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 9999;">
+            <div class="toast show text-bg-@Type border-0 shadow">
+                <div class="d-flex align-items-center justify-content-between px-3 py-2">
+                    <span>@Message</span>
+                    <button type="button"
+                            class="btn-close btn-close-white ms-3"
+                            @onclick="OnClose">
+                    </button>
+                </div>
+            </div>
+        </div>
+    }
+}
+
+@code {
+    /// <summary>
+    /// Gets or sets a value indicating whether the toast should be visible.
+    /// </summary>
+    [Parameter] public bool Visible { get; set; }
+
+    /// <summary>
+    /// Gets or sets the message text displayed in the toast.
+    /// </summary>
+    [Parameter] public string Message { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the Bootstrap background color type for the toast.
+    /// Accepted values include: <c>primary</c>, <c>success</c>,
+    /// <c>danger</c>, <c>info</c>, and <c>warning</c>.
+    /// </summary>
+    [Parameter] public string Type { get; set; } = "primary";
+
+    /// <summary>
+    /// Indicates whether the toast should appear inside a modal dialog
+    /// instead of being fixed to the page corner.
+    /// </summary>
+    [Parameter] public bool InsideModal { get; set; }
+
+    /// <summary>
+    /// Event callback triggered when the user closes the toast manually.
+    /// </summary>
+    [Parameter] public EventCallback OnClose { get; set; }
+}

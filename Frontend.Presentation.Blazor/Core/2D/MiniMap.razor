@@ -1,0 +1,508 @@
+﻿@using Microsoft.JSInterop
+@inject IJSRuntime JS
+
+<div class="minimap-container">
+    <div class="minimap-header">
+        <div class="minimap-scale">
+            <span>Scale: 1:@_currentScale</span>
+        </div>
+        <div class="minimap-controls">
+            <button class="grid-toggle @(_gridEnabled ? "enabled" : "disabled")" type="button" 
+                    @onclick="ToggleGrid">
+                Grid: @(_gridEnabled ? "ON" : "OFF")
+            </button>
+        </div>
+    </div>
+    <canvas @ref="_canvasRef"
+            width="@Width"
+            height="@Height"
+            style="border:1px solid #ccc; cursor: grab; display: block;">
+    </canvas>
+</div>
+
+<style>
+    .minimap-container {
+        display: inline-block;
+        border-radius: 8px;
+        padding: 10px;
+    }
+
+    .minimap-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+        padding: 0 5px;
+    }
+
+    .minimap-scale {
+        font-size: 12px;
+        color: #666;
+        font-family: Arial, sans-serif;
+        background: white;
+        padding: 4px 8px;
+        border-radius: 4px;
+        border: 1px solid #ddd;
+    }
+
+    .minimap-controls {
+        display: flex;
+        gap: 8px;
+    }
+
+    .grid-toggle {
+        font-size: 11px;
+        padding: 4px 12px;
+        border: 1px solid;
+        border-radius: 4px;
+        cursor: pointer;
+        font-family: Arial, sans-serif;
+        transition: all 0.2s ease;
+    }
+
+    .grid-toggle.enabled {
+        background-color: rgba(0, 150, 0, 0.1);
+        border-color: rgba(0, 150, 0, 0.6);
+        color: #006600;
+    }
+
+    .grid-toggle.enabled:hover {
+        background-color: rgba(0, 150, 0, 0.2);
+    }
+
+    .grid-toggle.disabled {
+        background-color: rgba(150, 0, 0, 0.1);
+        border-color: rgba(150, 0, 0, 0.6);
+        color: #660000;
+    }
+
+    .grid-toggle.disabled:hover {
+        background-color: rgba(150, 0, 0, 0.2);
+    }
+
+    canvas {
+        background: white;
+    }
+</style>
+
+@code {
+    private ElementReference _canvasRef;
+    private IJSObjectReference? _module;
+    private int _currentScale = 10;
+    private bool _gridEnabled = true;
+    private bool _isInitialized = false;
+    private readonly List<PendingObject> _pendingObjects = new();
+
+    public string _collisionInfo = string.Empty;
+
+    [Parameter] public int Width { get; set; } = 300;
+    [Parameter] public int Height { get; set; } = 300;
+    [Parameter] public EventCallback<ObjectPosition> OnObjectMoved { get; set; }
+    [Parameter] public EventCallback<List<string>> OnCollisionDetected { get; set; }
+
+    /// <summary>
+    /// On after render, initialize the MiniMap JavaScript module.
+    /// </summary>
+    protected override async Task OnAfterRenderAsync(bool first)
+    {
+        if (!first) return;
+        try
+        {
+            _module = await JS.InvokeAsync<IJSObjectReference>(
+                "import", "./_content/Minimap/minimap.js");
+
+            await _module.InvokeVoidAsync(
+                "minimap.init",
+                _canvasRef,
+                DotNetObjectReference.Create(this));
+
+            _isInitialized = true;
+            await ProcessPendingObjects();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Failed to initialize MiniMap: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Process any pending objects that were added before initialization.
+    /// </summary>
+    private async Task ProcessPendingObjects()
+    {
+        if (!_isInitialized || _module is null) return;
+
+        foreach (var pendingObj in _pendingObjects)
+        {
+            try
+            {
+                await _module.InvokeVoidAsync("minimap.addObject",
+                    pendingObj.Id, pendingObj.X, pendingObj.Y,
+                    pendingObj.Color, pendingObj.Width, pendingObj.Length,
+                    pendingObj.Draggable, pendingObj.RotationDeg);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Failed to add pending object {pendingObj.Id}: {ex.Message}");
+            }
+        }
+
+        _pendingObjects.Clear();
+    }
+
+    /// <summary>
+    /// Clear all objects from the MiniMap.
+    /// </summary>
+    public async Task ClearObjects()
+    {
+        if (!await EnsureInitialized()) return;
+        try
+        {
+            await _module!.InvokeVoidAsync("minimap.clearObjects");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Failed to clear objects: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Ensure the MiniMap is initialized before performing operations.
+    /// </summary>
+    private async Task<bool> EnsureInitialized(int maxRetries = 10, int delayMs = 50)
+    {
+        for (int i = 0; i < maxRetries; i++)
+        {
+            if (_isInitialized && _module is not null)
+                return true;
+            await Task.Delay(delayMs);
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// Set the learning space dimensions and center.
+    /// </summary>
+    public async Task SetLearningSpace(double width, double depth, double centerX = 0, double centerY = 0)
+    {
+        if (!await EnsureInitialized()) return;
+        try
+        {
+            await _module!.InvokeVoidAsync("minimap.setLearningSpace", width, depth, centerX, centerY);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Failed to set learning space: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Clear the learning space delimiter.
+    /// </summary>
+    public async Task ClearLearningSpace()
+    {
+        if (!await EnsureInitialized()) return;
+        try
+        {
+            await _module!.InvokeVoidAsync("minimap.clearLearningSpace");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Failed to clear learning space: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Add an object to the MiniMap.
+    /// </summary>
+    public async Task AddObject(string id, double x, double y, string color = "red", double width = 10, double length = 10, bool draggable = true, double rotationDeg = 0)
+    {
+        if (!_isInitialized || _module is null)
+        {
+            _pendingObjects.Add(new PendingObject(id, x, y, color, width, length, draggable, rotationDeg));
+            return;
+        }
+
+        try
+        {
+            await _module.InvokeVoidAsync("minimap.addObject", id, x, y, color, width, length, draggable, rotationDeg);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Failed to add object {id}: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Move an object to a new position.
+    /// </summary>
+    public async Task MoveObject(string id, double x, double y)
+    {
+        if (!await EnsureInitialized()) return;
+        try
+        {
+            await _module!.InvokeVoidAsync("minimap.moveObject", id, x, y);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Failed to move object {id}: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Update an object's position.
+    /// </summary>
+    public async Task<bool> UpdateObjectPosition(string id, double x, double y)
+    {
+        if (!await EnsureInitialized()) return false;
+        try
+        {
+            return await _module!.InvokeAsync<bool>("minimap.updateObjectPosition", id, x, y);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Failed to update object position {id}: {ex.Message}");
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Update an object's scale.
+    /// </summary>
+    public async Task<bool> UpdateObjectScale(string id, double width, double length)
+    {
+        if (!await EnsureInitialized()) return false;
+        try
+        {
+            return await _module!.InvokeAsync<bool>("minimap.updateObjectScale", id, width, length);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Failed to update object scale {id}: {ex.Message}");
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Update an object's color.
+    /// </summary>
+    public async Task<bool> UpdateObjectColor(string id, string color)
+    {
+        if (!await EnsureInitialized()) return false;
+        try
+        {
+            return await _module!.InvokeAsync<bool>("minimap.updateObjectColor", id, color);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Failed to update object color {id}: {ex.Message}");
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Update an object's identifier.
+    /// </summary>
+    public async Task<bool> UpdateObjectId(string oldId, string newId)
+    {
+        if (!await EnsureInitialized()) return false;
+        try
+        {
+            return await _module!.InvokeAsync<bool>("minimap.updateObjectId", oldId, newId);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Failed to update object id {oldId}: {ex.Message}");
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Set the zoom level of the MiniMap.
+    /// </summary>
+    public async Task SetZoom(double zoom)
+    {
+        if (!await EnsureInitialized()) return;
+        await _module!.InvokeVoidAsync("minimap.setZoom", zoom);
+    }
+
+    /// <summary>
+    /// Set the offset of the MiniMap.
+    /// </summary>
+    public async Task SetOffset(double x, double y)
+    {
+        if (!await EnsureInitialized()) return;
+        await _module!.InvokeVoidAsync("minimap.setOffset", x, y);
+    }
+
+    /// <summary>
+    /// Set the grid visibility.
+    /// </summary>
+    public async Task SetGridVisibility(bool visible)
+    {
+        if (!await EnsureInitialized()) return;
+        await _module!.InvokeVoidAsync("minimap.setGridVisibility", visible);
+    }
+
+    /// <summary>
+    /// Set the grid size.
+    /// </summary>
+    public async Task SetGridSize(double size)
+    {
+        if (!await EnsureInitialized()) return;
+        await _module!.InvokeVoidAsync("minimap.setGridSize", size);
+    }
+
+    /// <summary>
+    /// Set the grid and axis colors.
+    /// </summary>
+    public async Task SetGridColors(string gridColor = "#e0e0e0", string axisColor = "#888888")
+    {
+        if (!await EnsureInitialized()) return;
+        await _module!.InvokeVoidAsync("minimap.setGridColors", gridColor, axisColor);
+    }
+
+    /// <summary>
+    /// Set the controls panel visibility.
+    /// </summary>
+    public async Task SetControlsPanelVisibility(bool visible)
+    {
+        if (!await EnsureInitialized()) return;
+        await _module!.InvokeVoidAsync("minimap.setControlsPanelVisibility", visible);
+    }
+
+    /// <summary>
+    /// Set the controls panel position.
+    /// </summary>
+    public async Task SetControlsPanelPosition(double x, double y)
+    {
+        if (!await EnsureInitialized()) return;
+        await _module!.InvokeVoidAsync("minimap.setControlsPanelPosition", x, y);
+    }
+
+    /// <summary>
+    /// Set whether an object is draggable.
+    /// </summary>
+    public async Task SetObjectDraggable(string id, bool draggable)
+    {
+        if (!await EnsureInitialized()) return;
+        await _module!.InvokeVoidAsync("minimap.setObjectDraggable", id, draggable);
+    }
+
+    /// <summary>
+    /// Get the list of colliding object IDs.
+    /// </summary>
+    public async Task<string[]> GetCollisions()
+    {
+        if (!await EnsureInitialized()) return Array.Empty<string>();
+        return await _module!.InvokeAsync<string[]>("minimap.getCollisions");
+    }
+
+    /// <summary>
+    /// Update an object's rotation.
+    /// </summary>
+    public async Task<bool> UpdateObjectRotation(string id, double rotationDeg)
+    {
+        if (!await EnsureInitialized()) return false;
+        try
+        {
+            return await _module!.InvokeAsync<bool>("minimap.updateObjectRotation", id, rotationDeg);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Failed to update object rotation {id}: {ex.Message}");
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Toggle the grid visibility.
+    /// </summary>
+    private async Task ToggleGrid()
+    {
+        if (!await EnsureInitialized()) return;
+        await _module!.InvokeVoidAsync("minimap.toggleGrid");
+    }
+
+    /// <summary>
+    /// Update the scale display.
+    /// </summary>
+    [JSInvokable]
+    public async Task UpdateScaleDisplay(int scale)
+    {
+        _currentScale = scale;
+        StateHasChanged();
+    }
+
+    /// <summary>
+    /// Update the grid toggle state.
+    /// </summary>
+    [JSInvokable]
+    public async Task UpdateGridToggle(bool enabled)
+    {
+        _gridEnabled = enabled;
+        StateHasChanged();
+    }
+
+    /// <summary>
+    /// Notify that an object has moved.
+    /// </summary>
+    [JSInvokable]
+    public async Task NotifyPositionChanged(string id, double x, double y)
+    {
+        await OnObjectMoved.InvokeAsync(new ObjectPosition(id, x, y));
+    }
+
+    /// <summary>
+    /// Notify that a collision has been detected.
+    /// </summary>
+    [JSInvokable]
+    public async Task NotifyCollision(List<string> collidingIds)
+    {
+        await OnCollisionDetected.InvokeAsync(collidingIds);
+    }
+
+    /// <summary>
+    /// Object position record.
+    /// </summary>
+    public record ObjectPosition(string Id, double X, double Y, string Color = "red", double Width = 10, double Length = 10);
+
+    /// <summary>
+    /// Pending object record for initialization.
+    /// </summary>
+    private record PendingObject(string Id, double X, double Y, string Color, double Width, double Length, bool Draggable, double RotationDeg);
+
+    /// <summary>
+    /// Check if a specific object is outside learning space boundaries.
+    /// </summary>
+    public async Task<bool> IsObjectOutsideBounds(string objectId)
+    {
+        if (!await EnsureInitialized()) return false;
+        try
+        {
+            return await _module!.InvokeAsync<bool>("minimap.isObjectOutsideLearningSpaceAPI", objectId);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Failed to check if object {objectId} is outside bounds: {ex.Message}");
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Get all object IDs that are outside learning space boundaries.
+    /// </summary>
+    public async Task<string[]> GetObjectsOutsideBounds()
+    {
+        if (!await EnsureInitialized()) return Array.Empty<string>();
+        try
+        {
+            return await _module!.InvokeAsync<string[]>("minimap.getObjectsOutsideLearningSpaceAPI");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Failed to get objects outside bounds: {ex.Message}");
+            return Array.Empty<string>();
+        }
+    }
+}

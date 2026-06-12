@@ -1,0 +1,149 @@
+@using Microsoft.JSInterop
+@using UCR.ECCI.PI.ThemePark.Frontend.Application.Buildings.Services
+@using UCR.ECCI.PI.ThemePark.Frontend.Domain.Buildings.Entities
+@using UCR.ECCI.PI.ThemePark.Frontend.Domain.Core.Exceptions
+@using UCR.ECCI.PI.ThemePark.Frontend.Presentation.Blazor.Buildings.Models
+@using static UCR.ECCI.PI.ThemePark.Frontend.Presentation.Blazor.Core._2D.MiniMap
+@rendermode InteractiveServer
+@inject IBuildingService BuildingService
+
+
+<MiniMap 
+    Height="700" 
+    Width="580" 
+    OnObjectMoved="OnObjectMoved"
+    OnCollisionDetected="OnCollisionDetected"
+    @ref=minimap 
+    />
+
+<style>
+    .alert {
+        position: absolute;
+        top: 7em;
+        right: 13em;
+        width: 300px;
+        min-height: 40px;
+
+        font-size: 0.8rem;
+        line-height: 0.87;
+
+        padding: 8px 12px;
+        box-sizing: border-box;
+    }
+</style>
+
+@code{
+
+    [Parameter]
+    public BuildingFormModel Model { get; set; } = null!;
+
+    [Parameter] public EventCallback<ObjectPosition> OnObjectMoved { get; set; }
+
+    IEnumerable<Building> _buildings = [];
+
+    MiniMap minimap = null!;
+
+    private string? collisionMessage;
+
+    public async Task LoadBuildingsAsync()
+    {
+        try
+        {
+            _buildings = await BuildingService.GetBuildingsAsync();
+        }
+        catch (ValidationException)
+        {
+            _buildings = [];
+        }
+    }
+
+    private async Task RenderBuildingsOnMinimap(int? buildingId = null, bool canMove = true)
+    {
+        foreach (var building in _buildings)
+        {
+            bool isTarget = buildingId.HasValue && building.Id == buildingId.Value;
+
+            string color = isTarget
+                ? building.RenderInfo.Color
+                : "#787878";
+
+            bool isMoveable = canMove && isTarget;
+            
+            await minimap.AddObject(
+                building.Id.ToString(),
+                (double)building.RenderInfo.X,
+                (double)building.RenderInfo.Z,
+                color,
+                (double)building.RenderInfo.Width,
+                (double)building.RenderInfo.Depth,
+                isMoveable
+            );
+        }
+    }
+
+    public async Task LoadBuildings()
+    {
+        await LoadBuildingsAsync();
+        await RenderBuildingsOnMinimap();
+    }
+
+    public async Task LoadBuildingAlreadyCreated(int id, bool canMove)
+    {
+        await LoadBuildingsAsync();
+        await RenderBuildingsOnMinimap(id, canMove);
+    }
+
+    public async Task PreviewBuilding(BuildingFormModel model)
+    {
+
+        await minimap.AddObject(
+            "New",
+            (double)(model.PositionX ?? 0),
+            (double)(model.PositionZ ?? 0),
+            "#000000",
+            (double)(model.Width ?? 10),
+            (double)(model.Depth ?? 10),
+            true
+        );
+    }
+
+    public async Task ResetMiniMap()
+    {
+        await minimap.ClearObjects();
+    }
+
+    public async Task UpdatePosition(string id, double x, double y)
+    {
+        await minimap.UpdateObjectPosition(id, x, y);
+    }
+
+    public async Task UpdateScale(string id, double width, double depth)
+    {
+        await minimap.UpdateObjectScale(id, width, depth);
+    }
+
+    public async Task UpdateObjectId(string oldId, string newId)
+    {
+        await minimap.UpdateObjectId(oldId, newId);
+    }
+
+    public async Task UpdateObjectColor(string id, string newColor)
+    {
+        await minimap.UpdateObjectColor(id, newColor);
+    }
+
+    private Task OnCollisionDetected(List<string> ids)
+    {
+        if (ids.Count == 0)
+        {
+            collisionMessage = null;
+        }
+        else
+        {
+            collisionMessage = $"Collision detected between objects: {string.Join(", ", ids)}";
+        }
+
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+}

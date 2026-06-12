@@ -1,0 +1,74 @@
+﻿@typeparam TItem
+@using UCR.ECCI.PI.ThemePark.Frontend.Presentation.Blazor.Core.Components.Tables
+@using Microsoft.AspNetCore.Components
+
+<table class="table">
+    <thead>
+        <tr>
+            @if (ActionsTemplate is not null)
+            {
+                <th class="@HeaderCellClass">Actions</th>
+            }
+            @if (Columns is not null)
+            {
+                @foreach (var col in Columns)
+                {
+                    <th class="@HeaderCellClass">@col.Title</th>
+                }
+            }
+        </tr>
+    </thead>
+
+    <tbody>
+        @if (Items is not null && Items.Any())
+        {
+            @foreach (var item in Items)
+            {
+                <tr>
+                    @if (ActionsTemplate is not null)
+                    {
+                        <td class="@($"{CellClass} action-cell")">
+                            @ActionsTemplate(item)
+                        </td>
+                    }
+                    @if (Columns is not null)
+                    {
+                        @foreach (var col in Columns)
+                        {
+                            <td class="@CellClass">
+                                @if (col.Template is not null)
+                                {
+                                    @col.Template(item)
+                                }
+                                else if (col.ValueSelector is not null)
+                                {
+                                    @col.ValueSelector(item)
+                                }
+                            </td>
+                        }
+                    }
+                </tr>
+            }
+        }
+        else
+        {
+            <tr>
+                <td colspan="@TotalColumnCount"
+                    class="@($"{CellClass} text-center text-muted py-4")">
+                    @EmptyMessage
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@code {
+    [Parameter] public IEnumerable<TItem> Items { get; set; } = Enumerable.Empty<TItem>();
+    [Parameter] public IEnumerable<ColumnDefinition<TItem>> Columns { get; set; } = Enumerable.Empty<ColumnDefinition<TItem>>();
+    [Parameter] public RenderFragment<TItem>? ActionsTemplate { get; set; }
+    [Parameter] public string? EmptyMessage { get; set; } = "No items found.";
+    [Parameter] public string HeaderCellClass { get; set; } = "header-cell-blue";
+    [Parameter] public string CellClass { get; set; } = "data-cell-gray";
+
+    private int TotalColumnCount => (Columns?.Count() ?? 0) + (ActionsTemplate is not null ? 1 : 0);
+}

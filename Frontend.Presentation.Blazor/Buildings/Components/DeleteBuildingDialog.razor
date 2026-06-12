@@ -1,0 +1,59 @@
+﻿@namespace UCR.ECCI.PI.ThemePark.Frontend.Presentation.Blazor.Buildings.Components
+@using Microsoft.AspNetCore.Components
+
+@if (IsOpen)
+{
+    <div style="position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:9999;">
+        <div style="max-width:520px; margin:10% auto; background:#fff; border-radius:8px; box-shadow:0 10px 30px rgba(0,0,0,0.2);">
+            <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
+                <strong>Confirm delete</strong>
+                <button class="btn btn-sm btn-outline-secondary" @onclick="HandleCancel" disabled="@IsBusy">X</button>
+            </div>
+
+            <div class="p-3">
+                <p>Confirm deletion of this building. This operation cannot be undone.</p>
+                <dl class="row mb-0">
+                    <dt class="col-sm-4">Name</dt>
+                    <dd class="col-sm-8">@Name</dd>
+                    <dt class="col-sm-4">Official ID</dt>
+                    <dd class="col-sm-8">@OfficialId</dd>
+                </dl>
+
+                @if (!string.IsNullOrWhiteSpace(ErrorMessage))
+                {
+                    <div class="text-danger small mt-3">@ErrorMessage</div>
+                }
+            </div>
+
+            <div class="p-3 border-top d-flex justify-content-end gap-2">
+                <button class="btn btn-outline-secondary" @onclick="HandleCancel" disabled="@IsBusy">Cancel</button>
+                <button class="btn btn-danger" @onclick="HandleConfirmAsync" disabled="@IsBusy">Delete</button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public bool IsOpen { get; set; }
+    [Parameter] public bool IsBusy { get; set; }
+    [Parameter] public string? ErrorMessage { get; set; }
+
+    // Selected row data
+    [Parameter] public string? OfficialId { get; set; }
+    [Parameter] public string? Name { get; set; }
+
+    [Parameter] public EventCallback OnCancel { get; set; }
+    [Parameter] public EventCallback OnConfirm { get; set; }
+
+    private async Task HandleCancel()
+    {
+        if (IsBusy) return;
+        await OnCancel.InvokeAsync();
+    }
+
+    private async Task HandleConfirmAsync()
+    {
+        if (IsBusy) return;
+        await OnConfirm.InvokeAsync();
+    }
+}

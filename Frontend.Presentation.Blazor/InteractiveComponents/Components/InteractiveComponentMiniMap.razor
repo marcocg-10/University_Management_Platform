@@ -1,0 +1,231 @@
+﻿@inject UCR.ECCI.PI.ThemePark.Frontend.Domain.InteractiveComponents.Repositories.IInteractiveComponentRepository _interactiveComponentRepository
+@using UCR.ECCI.PI.ThemePark.Frontend.Domain.InteractiveComponents.Entities
+@using UCR.ECCI.PI.ThemePark.Frontend.Domain.LearningSpaces.Entities
+@using static UCR.ECCI.PI.ThemePark.Frontend.Presentation.Blazor.Core._2D.MiniMap
+
+<MiniMap @ref="miniMap"
+         Height="500"
+         Width="500"
+         OnObjectMoved="HandleMove" />
+
+@code {
+    [Parameter] public int? LearningSpaceId { get; set; }
+    [Parameter] public EventCallback<ObjectPosition> OnObjectMoved { get; set; }
+    [Parameter] public LearningSpace? SelectedLearningSpace { get; set; }
+
+    // Preview parameters
+    [Parameter] public double? PreviewX { get; set; }
+    [Parameter] public double? PreviewY { get; set; }
+    [Parameter] public double? PreviewWidth { get; set; }
+    [Parameter] public double? PreviewLength { get; set; }
+    // Preview rotation in degrees (top-down uses Y axis)
+    [Parameter] public double? PreviewRotationDeg { get; set; }
+
+    private const string PreviewObjectId = "default-component";
+    private MiniMap miniMap = null!;
+    private IEnumerable<InteractiveComponent> _interactiveComponents = Enumerable.Empty<InteractiveComponent>();
+
+    // Track previous parameter values to decide what to refresh
+    private int? _lastLearningSpaceId;
+    private double? _lastPreviewX;
+    private double? _lastPreviewY;
+    private double? _lastPreviewWidth;
+    private double? _lastPreviewLength;
+    private double? _lastPreviewRotationDeg;
+
+    /// <summary>
+    /// On parameter set, update the MiniMap contents as needed.
+    /// </summary>
+    protected override async Task OnParametersSetAsync()
+    {
+        if (miniMap is null) return;
+
+        var learningSpaceChanged = _lastLearningSpaceId != LearningSpaceId;
+
+        if (learningSpaceChanged)
+        {
+            await miniMap.ClearObjects();
+
+            await miniMap.SetZoom(8);
+
+            // Draw room boundary only when a LearningSpaceId is provided.
+            if (LearningSpaceId is not null && SelectedLearningSpace is not null)
+            {
+                await miniMap.SetLearningSpace(
+                    width: SelectedLearningSpace.Dimensions?.Width ?? 50,
+                    depth: SelectedLearningSpace.Dimensions?.Length ?? 50,
+                    centerX: 0,
+                    centerY: 0
+                );
+            }
+
+            // If no LearningSpace selected, just update preview and exit.
+            if (LearningSpaceId is null)
+            {
+                await miniMap.ClearLearningSpace(); // ensure delimiter is removed
+                await EnsureOrUpdatePreviewAsync();
+                CachePreviewParams();
+                _lastLearningSpaceId = LearningSpaceId;
+                return;
+            }
+
+            // Load Boards.
+            var boards = await _interactiveComponentRepository.ListAllBoardsAsync();
+            _interactiveComponents = boards.Where(ic => ic.LearningSpaceId == LearningSpaceId.Value);
+            // Render Boards.
+            foreach (var ic in _interactiveComponents)
+            {
+                var x = ic.Coordinates?.X ?? 0;
+                // MiniMap Y (cartesian plane) uses Z coordinate from 3D space.
+                var y = ic.Coordinates?.Z ?? 0;
+                var width = ic.Dimensions?.Width ?? 10;
+                var depth = ic.Dimensions?.Depth ?? 10;
+                var rotationDeg = ic.Rotations?.YAxisRotation ?? 0;
+
+                await miniMap.AddObject(
+                    id: ic.PlateId?.ToString() ?? Guid.NewGuid().ToString(),
+                    x: x,
+                    y: y,
+                    color: "#787878",
+                    width: width,
+                    length: depth,
+                    draggable: false,
+                    rotationDeg: rotationDeg
+                );
+            }
+
+            // Load Projectors.
+            var projectors = await _interactiveComponentRepository.ListAllProjectorsAsync();
+            _interactiveComponents = projectors.Where(ic => ic.LearningSpaceId == LearningSpaceId.Value);
+            // Render Projectors.
+            foreach (var ic in _interactiveComponents)
+            {
+                var x = ic.Coordinates?.X ?? 0;
+                // MiniMap Y (cartesian plane) uses Z coordinate from 3D space.
+                var y = ic.Coordinates?.Z ?? 0;
+                var width = ic.Dimensions?.Width ?? 10;
+                var depth = ic.Dimensions?.Depth ?? 10;
+                var rotationDeg = ic.Rotations?.YAxisRotation ?? 0;
+
+                await miniMap.AddObject(
+                    id: ic.PlateId?.ToString() ?? Guid.NewGuid().ToString(),
+                    x: x,
+                    y: y,
+                    color: "#787878",
+                    width: width,
+                    length: depth,
+                    draggable: false,
+                    rotationDeg: rotationDeg
+                );
+            }
+
+            // Add or update preview object.
+            await EnsureOrUpdatePreviewAsync();
+
+            // Cache values.
+            CachePreviewParams();
+            _lastLearningSpaceId = LearningSpaceId;
+            return;
+        }
+
+        // If LearningSpaces did not change, only update preview if its params changed
+        var previewChanged =
+            _lastPreviewX != PreviewX ||
+            _lastPreviewY != PreviewY ||
+            _lastPreviewWidth != PreviewWidth ||
+            _lastPreviewLength != PreviewLength ||
+            _lastPreviewRotationDeg != PreviewRotationDeg;
+
+        // Update preview if needed
+        if (previewChanged)
+        {
+            await EnsureOrUpdatePreviewAsync();
+            CachePreviewParams();
+        }
+    }
+
+    /// <summary>
+    /// Ensures the preview exists; updates position and scale if present, adds once if missing.
+    /// </summary>
+    private async Task EnsureOrUpdatePreviewAsync()
+    {
+        var x = PreviewX ?? 0;
+        var y = PreviewY ?? 0;
+        var width = PreviewWidth ?? 1;
+        var length = PreviewLength ?? 1;
+        var rotationDeg = PreviewRotationDeg ?? 0;
+
+        // Try to update position; if false, object not found.
+        var posUpdated = await miniMap.UpdateObjectPosition(PreviewObjectId, x, y);
+
+        // Update scale too (if it exists); ignore result when it doesn't yet exist.
+        var scaleUpdated = await miniMap.UpdateObjectScale(PreviewObjectId, width, length);
+
+        // If either update indicates the object is missing, add it once.
+        if (!posUpdated && !scaleUpdated)
+        {
+            await miniMap.AddObject(
+                id: PreviewObjectId,
+                x: x,
+                y: y,
+                color: "blue",
+                width: width,
+                length: length,
+                draggable: true,
+                rotationDeg: rotationDeg
+            );
+        }
+        else
+        {
+            // Ensure color and draggability remain correct.
+            await miniMap.UpdateObjectColor(PreviewObjectId, "blue");
+            await miniMap.SetObjectDraggable(PreviewObjectId, true);
+            await miniMap.UpdateObjectRotation(PreviewObjectId, rotationDeg);
+        }
+    }
+
+    /// <summary>
+    /// Caches the current preview parameters for change detection.
+    /// </summary>
+    private void CachePreviewParams()
+    {
+        _lastPreviewX = PreviewX;
+        _lastPreviewY = PreviewY;
+        _lastPreviewWidth = PreviewWidth;
+        _lastPreviewLength = PreviewLength;
+        _lastPreviewRotationDeg = PreviewRotationDeg;
+    }
+
+    /// <summary>
+    /// Handles when an object is moved on the MiniMap.
+    /// </summary>
+    async Task HandleMove(MiniMap.ObjectPosition pos)
+    {
+        if (OnObjectMoved.HasDelegate)
+        {
+            await OnObjectMoved.InvokeAsync(pos);
+        }
+    }
+
+    /// <summary>
+    /// Resets the MiniMap to its default state, optionally keeping the LearningSpace and/or preview.
+    /// </summary>
+    public async Task ResetAsync()
+    {
+        if (miniMap is null) return;
+
+        // Clear all rendered objects
+        await miniMap.ClearObjects();
+
+        // Clear the LearningSpace delimiter
+        await miniMap.ClearLearningSpace();
+
+        // Restore default view
+        await miniMap.SetZoom(8);
+        await miniMap.SetGridVisibility(true);
+
+        // Reset cached params so next open re-renders properly
+        _lastLearningSpaceId = null;
+        _lastPreviewX = _lastPreviewY = _lastPreviewWidth = _lastPreviewLength = null;
+    }
+}

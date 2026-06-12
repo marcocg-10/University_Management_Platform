@@ -1,0 +1,293 @@
+@page "/users"
+@attribute [Authorize]
+@rendermode InteractiveServer
+
+@using UCR.ECCI.PI.ThemePark.Frontend.Application.Users.Services
+@using UCR.ECCI.PI.ThemePark.Frontend.Domain.Users.Entities
+@using UCR.ECCI.PI.ThemePark.Frontend.Presentation.Blazor.Users.Components
+@using UCR.ECCI.PI.ThemePark.Frontend.Presentation.Blazor.Core.Auth.Components
+@using UCR.ECCI.PI.ThemePark.Frontend.Presentation.Blazor.Core.Components.Icons
+@using UCR.ECCI.PI.ThemePark.Frontend.Domain.Core.Metadata;
+
+
+@inject IUserService UserService
+
+<PageTitle>Users</PageTitle>
+
+<ProtectedPageBase RequiredPermission="ListUsers">
+    <h1><strong>Users</strong></h1>
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+
+        <div class="input-group w-50 mb-2">
+
+            <input class="form-control"
+                   placeholder="Search users..."
+                   @bind="searchUsers"
+                   @bind:event="oninput"
+                   @onblur="() => LoadUsersPageAsync(1)"/>
+
+            <button class="input-group-text bg-white border-0"
+                    style="cursor: pointer;"
+                    @onclick="() => LoadUsersPageAsync(1)">
+                <SearchIcon />
+            </button>
+
+        </div>
+        <PermissionGuard RequiredPermission="CreateUsers">
+            <button class="btn btn-ucr-blue-lg ms-3"
+                    @onclick="ShowAddUser">
+                Add
+            </button>
+        </PermissionGuard>
+
+    </div>
+    
+
+    <Loading IsLoading="_isLoading">
+        <UserTable Users="_users"/>
+    </Loading>
+
+    <PermissionGuard RequiredPermission="CreateUsers">
+        <AddUserModal IsVisible="@_showAddUser"
+                      OnClose="HideAddUser"
+                      OnSaved="HandleUserAdded"
+                      ContentStyle="width: 50vw; max-width: 720px; max-height: 70vh; display:flex; flex-direction:column; overflow:auto;"
+                      OverlayStyle="align-items:flex-start; padding-top:5vh;" />
+    </PermissionGuard>
+
+
+    <!-- Pagination footer -->
+    <div class="d-flex justify-content-center mt-2">
+        <div class="d-flex align-items-center justify-content-center gap-2 flex-nowrap text-nowrap pagination-inline">
+            <div class="d-flex align-items-center gap-2">
+                <label class="form-label fw-bold mb-0 me-1">Page Size:</label>
+
+                <!-- Dropdown pagination -->
+                <select class="form-select form-select-sm"
+                        style="width: 110px;"
+                        @bind="_selectedPageSizeOption"
+                        disabled="@_isLoading">
+                    <option value="10">10</option>
+                    <option value="20">20</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                    <option value="custom">Custom</option>
+                </select>
+
+                <!-- Custom size input (visible only when 'custom' is selected) -->
+                @if (_selectedPageSizeOption == "custom")
+                {
+                    <input type="number"
+                           class="form-control form-control-sm"
+                           style="width: 70px;"
+                           min="1"
+                           max="100"
+                           @bind="_customPageSize"
+                           @onblur="ApplyCustomPageSize"
+                           disabled="@_isLoading" />
+                }
+            </div>
+            <span class="tab-spacer"></span>
+
+            <div class="d-flex align-items-center gap-2">
+                <button class="btn btn-sm pagination-nav-btn"
+                        @onclick="PrevPageAsync"
+                        disabled="@(!CanPrev || _isLoading)">
+                    Previous
+                </button>
+
+                @foreach (var p in PageNumbers)
+                {
+                    <button class="btn btn-sm pagination-number-btn @(p == CurrentPage ? "active" : "")"
+                            @onclick="@(() => GoToPage(p))"
+                            disabled="@_isLoading">
+                        @p
+                    </button>
+                }
+
+                <button class="btn btn-sm pagination-nav-btn"
+                        @onclick="NextPageAsync"
+                        disabled="@(!CanNext || _isLoading)">
+                    Next
+                </button>
+            </div>
+        </div>
+    </div>
+
+</ProtectedPageBase>
+
+
+
+@code {
+    private bool _isLoading = true;
+    private IEnumerable<User> _users = [];
+    private bool _showAddUser;
+    private string searchUsers = "";
+    private string query = string.Empty;
+    private PaginationMetadata? _pagination;
+    private int CurrentPage => _pagination?.CurrentPage ?? 1;
+    private int TotalPages => _pagination?.TotalPages ?? 0;
+    private bool CanPrev => _pagination?.HasPrevious == true;
+    private bool CanNext => _pagination?.HasNext == true;
+    private int _pageSize = 10;
+    private string _selectedPageSizeOptionBacking = "10";
+    private int _customPageSizeBacking = 10;
+    private IEnumerable<User> _availableUsers = Enumerable.Empty<User>();
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadUsersPageAsync(CurrentPage);
+    }
+
+    private void ShowAddUser() => _showAddUser = true;
+    private void HideAddUser() => _showAddUser = false;
+
+    private async Task HandleUserAdded(User user)
+    {
+        _showAddUser = false;
+        await RefreshDataAsync();
+    }
+
+    private async Task RefreshDataAsync()
+    {
+        await LoadUsersPageAsync(CurrentPage);
+
+    }
+
+    private IEnumerable<int> PageNumbers
+    {
+        get
+        {
+            // Window size: show current page ±2, plus first and last page
+            const int window = 2;
+            int totalPages = Math.Max(TotalPages, 1);
+            int current = CurrentPage;
+            var pages = new List<int>();
+            if (totalPages <= 7)
+            {
+                // If few pages, show all
+                pages.AddRange(Enumerable.Range(1, totalPages));
+            }
+            else
+            {
+                // Always show first page
+                pages.Add(1);
+                // Determine window start/end
+                int start = Math.Max(2, current - window);
+                int end = Math.Min(totalPages - 1, current + window);
+                // Add windowed pages
+                for (int i = start; i <= end; i++)
+                {
+                    pages.Add(i);
+                }
+                // Always show last page
+                pages.Add(totalPages);
+            }
+            return pages;
+        }
+    }
+
+    /// <summary>
+    /// Loads a specific page of boards applying pagination.
+    /// </summary>
+    /// <param name="page">Page number to load (1-based).</param>
+    private async Task LoadUsersPageAsync(int page)
+    {
+        if (page < 1) page = 1;
+        _isLoading = true;
+        StateHasChanged();
+
+        try
+        {
+            var (Users, Metadata) = await UserService.SearchUsersAsync(searchUsers, page, _pageSize);
+
+            _users = Users ?? Enumerable.Empty<User>();
+            _pagination = Metadata ?? null;
+        }
+        catch (Exception ex)
+        {
+            throw new Exception("An unexpected error occurred while loading the users page.", ex);
+        }
+        finally
+        {
+            _isLoading = false;
+            StateHasChanged();
+        }
+    }
+   
+    private Task NextPageAsync() => CanNext ? LoadUsersPageAsync(CurrentPage + 1) : Task.CompletedTask;
+    private Task PrevPageAsync() => CanPrev ? LoadUsersPageAsync(CurrentPage - 1) : Task.CompletedTask;
+
+    private Task GoToPage(int page)
+    {
+        var max = Math.Max(TotalPages, 1);
+        if (page < 1) page = 1;
+        if (page > max) page = max;
+
+        return LoadUsersPageAsync(page);
+    }
+
+    private string _selectedPageSizeOption
+    {
+        get => _selectedPageSizeOptionBacking;
+        set
+        {
+            if (_selectedPageSizeOptionBacking == value) return;
+            _selectedPageSizeOptionBacking = value;
+
+            UpdateEffectivePageSize();
+            _ = LoadUsersPageAsync(1);
+            
+        }
+    }
+
+    private int _customPageSize
+    {
+        get => _customPageSizeBacking;
+        set
+        {
+            _customPageSizeBacking = value;
+        }
+    }
+
+    private void ApplyCustomPageSize()
+    {
+        if (_selectedPageSizeOptionBacking == "custom")
+        {
+            if (_customPageSizeBacking < 1)
+            {
+
+                _customPageSizeBacking = 1;
+                Console.WriteLine("Page size must be at least 1. \nIt has been adjusted to 1.");
+
+            }
+            else if (_customPageSizeBacking > 100)
+            {
+                _customPageSizeBacking = 100;
+                Console.WriteLine("Page size cannot exceed 100. \nIt has been adjusted to 100.");
+            }
+
+            UpdateEffectivePageSize();
+            _ = LoadUsersPageAsync(1);
+            
+        }
+    }
+
+    private void UpdateEffectivePageSize()
+    {
+        if (_selectedPageSizeOptionBacking == "custom")
+        {
+            _pageSize = _customPageSizeBacking;
+        }
+        else
+        {
+            if (!int.TryParse(_selectedPageSizeOptionBacking, out _pageSize))
+            {
+                _pageSize = 10;
+            }
+        }
+    }
+  
+}

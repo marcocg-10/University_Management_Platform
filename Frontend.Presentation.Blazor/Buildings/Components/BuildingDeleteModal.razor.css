@@ -1,0 +1,136 @@
+/* Building Delete Modal Styles */
+
+/* Backdrop overlay for focus and click-capture */
+.bd-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.35);
+    backdrop-filter: saturate(180%) blur(2px);
+    z-index: 999;
+}
+
+/* Main container of the popup */
+.bd-card {
+    position: fixed; /* Keeps the popup fixed on screen (does not move when scrolling). */
+    top: 50vh; /* Centers vertically using viewport height. */
+    left: 50%; /* Centers horizontally. */
+    transform: translate(-50%, -50%); /* Perfect center. */
+    width: min(92vw, 480px); /* Responsive width capped to 480px. */
+    max-height: 90vh; /* Ensure the modal fits inside viewport height. */
+    overflow: auto; /* Allow scrolling if content is taller than viewport. */
+    background: #fff; /* Sets a white background color. */
+    border: 0.5px solid #757575; /* Adds a thin gray border. */
+    border-radius: 12px; /* Slightly larger rounding for modern feel. */
+    box-shadow: 0 12px 28px rgba(0,0,0,.18); /* Adds a soft shadow for a floating effect. */
+    font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; /* Defines modern system font stack. */
+    z-index: 1000; /* Above backdrop. */
+}
+
+/* Header section of the popup */
+.bd-header {
+    display: flex; /* Uses flexbox layout for the header elements. */
+    justify-content: space-between; /* Places the title on the left and the close button on the right. */
+    align-items: center; /* Vertically aligns both elements. */
+    padding: 10px 12px 6px; /* Adds internal spacing: top, sides, bottom. */
+}
+
+/* Title container (holds the icon and the title text) */
+.bd-title-wrap {
+    display: flex; /* Uses flexbox to align icon and text horizontally. */
+    align-items: center; /* Vertically centers icon and text. */
+    gap: 2px; /* Adds spacing between icon and text. */
+}
+
+/* Icon style (small circular info indicator) */
+.bd-icon {
+    display: inline-flex; /* Allows the icon to be centered using flexbox while staying inline. */
+    align-items: center; /* Vertically centers the icon's content. */
+    justify-content: center; /* Horizontally centers the icon's content. */
+    width: 18px; /* Sets icon width. */
+    height: 18px; /* Sets icon height (same as width for a perfect circle). */
+    border-radius: 50%; /* Makes the shape circular. */
+    border: 1px solid #d97706; /* Adds an orange border. */
+    color: #d97706; /* Sets icon text color to orange. */
+    font-size: 12px; /* Defines the size of the i symbol. */
+    line-height: 1; /* Prevents extra vertical spacing. */
+}
+
+/* Title text */
+.bd-title {
+    font-weight: 600; /* Semi-bold for better emphasis. */
+    color: #111827; /* Dark gray for strong contrast. */
+}
+
+/* Close (x) button */
+.bd-close {
+    background: transparent; /* Removes background. */
+    border: 0; /* Removes default button border. */
+    font-size: 18px; /* Makes the x symbol clearly visible. */
+    line-height: 1; /* Removes extra vertical spacing. */
+    cursor: pointer; /* Changes the cursor to a pointer on hover. */
+    color: #6b7280; /* Gray color for normal state. */
+    padding: 0 4px; /* Adds minimal horizontal padding for better click area. */
+}
+
+/* Subtitle text */
+.bd-subtitle {
+    padding: 0 12px; /* Adds horizontal spacing from edges. */
+    color: #b45309; /* Uses a darker orange tone for emphasis. */
+    font-size: 13px; /* Slightly smaller than title text. */
+    font-weight: 600; /* Semi-bold for prominence. */
+    margin-top: 2px; /* Adds small space above subtitle. */
+}
+
+/* Highlighted text inside subtitle */
+.bd-hl {
+    color: #b45309; /* Keeps consistent orange highlight. */
+}
+
+/* Main body text of the popup */
+.bd-body {
+    padding: 8px 12px 0; /* Internal spacing (top and sides, no bottom). */
+    color: #374151; /* Medium gray for body text. */
+    font-size: 13px; /* Standard body text size. */
+}
+
+/* Footer section containing the buttons */
+.bd-footer {
+    padding: 12px; /* Adds internal spacing around buttons. */
+    display: flex; /* Uses flexbox for button layout. */
+    gap: 8px; /* Creates spacing between buttons. */
+    justify-content: flex-start; /* Aligns buttons to the left. */
+}
+
+/* Generic button style */
+.bd-btn {
+    padding: 6px 12px; /* Defines button size. */
+    border-radius: 8px; /* Rounds the corners. */
+    border: 1px solid transparent; /* Keeps a clean borderless look. */
+    font-size: 13px; /* Sets readable text size. */
+    cursor: pointer; /* Changes cursor to pointer to indicate action. */
+}
+
+/* Delete (danger) button */
+.bd-btn-danger {
+    background: #B14212; /* Strong orange-red color to signal destructive action. */
+    color: #fff; /* White text for high contrast. */
+}
+
+/* Small screens: ensure comfortable tap targets and spacing */
+@media (max-width: 360px) {
+    .bd-card {
+        width: 94vw;
+        border-radius: 10px;
+    }
+    .bd-header { padding: 10px; }
+    .bd-body { font-size: 14px; }
+    .bd-btn { font-size: 14px; }
+}
+
+/* Larger screens: allow a bit more width */
+@media (min-width: 768px) {
+    .bd-card {
+        width: min(70vw, 520px);
+        max-height: 85vh;
+    }
+}

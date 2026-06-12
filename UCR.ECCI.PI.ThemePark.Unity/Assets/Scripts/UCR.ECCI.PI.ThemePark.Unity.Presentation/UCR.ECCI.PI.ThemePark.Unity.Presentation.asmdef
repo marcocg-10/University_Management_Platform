@@ -1,0 +1,24 @@
+{
+    "name": "UCR.ECCI.PI.ThemePark.Unity.Presentation",
+    "rootNamespace": "UCR.ECCI.PI.ThemePark.Unity.Presentation",
+    "references": [
+        "UCR.ECCI.PI.ThemePark.Unity.Domain",
+        "UCR.ECCI.PI.ThemePark.Unity.Application",
+        "UCR.ECCI.PI.ThemePark.Unity.Infrastructure",
+        "UCR.ECCI.PI.ThemePark.Unity.Services",
+        "Unity.InputSystem",
+        "Zenject",
+        "Unity.Cinemachine",
+        "ReadyPlayerMe.AvatarCreator",
+        "FlexibleColorPicker"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

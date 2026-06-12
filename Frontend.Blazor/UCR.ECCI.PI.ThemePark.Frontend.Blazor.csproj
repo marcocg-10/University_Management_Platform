@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Blazored.Toast" Version="4.2.1" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.11" />
+    <PackageReference Include="Microsoft.Extensions.Logging.AzureAppServices" Version="9.0.11" />
+    <PackageReference Include="Microsoft.Identity.Abstractions" Version="9.5.0" />
+    <PackageReference Include="Microsoft.Identity.Web" Version="4.0.0" />
+    <PackageReference Include="Microsoft.Identity.Web.DownstreamApi" Version="4.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Frontend.Presentation.Blazor\UCR.ECCI.PI.ThemePark.Frontend.Presentation.Blazor.csproj" />
+    <ProjectReference Include="..\Frontend.DependencyInjection\UCR.ECCI.PI.ThemePark.Frontend.DependencyInjection.csproj" />
+  </ItemGroup>
+
+    <PropertyGroup>
+        <SonarQubeTestProject>false</SonarQubeTestProject>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <ErrorOnDuplicatePublishOutputFiles>false</ErrorOnDuplicatePublishOutputFiles>
+    </PropertyGroup>
+</Project>

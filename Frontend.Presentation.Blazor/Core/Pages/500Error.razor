@@ -1,0 +1,111 @@
+﻿@page "/error/500"
+
+<PageTitle>Error - ThemePark</PageTitle>
+
+<div class="error-container">
+    <div class="error-content">
+        <h1 class="error-title">Oops! Something went wrong</h1>
+        <p class="error-message">
+            We're sorry, but an unexpected error has occurred. 
+            Our team has been notified and is working to fix this issue.
+        </p>
+        <div class="error-actions">
+            <button class="btn btn-primary" @onclick="GoHome">
+                Go to Home
+            </button>
+            <button class="btn btn-outline-secondary" @onclick="GoBack">
+                Go Back
+            </button>
+        </div>
+    </div>
+</div>
+
+<style>
+    .error-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 70vh;
+        padding: 2rem;
+    }
+
+    .error-content {
+        text-align: center;
+        max-width: 500px;
+        padding: 2rem;
+        background: #fff;
+        border-radius: 10px;
+    }
+
+    .error-icon {
+        font-size: 4rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .error-title {
+        color: #333;
+        font-size: 2rem;
+        font-weight: bold;
+        margin-bottom: 1rem;
+    }
+
+    .error-message {
+        color: #666;
+        font-size: 1.1rem;
+        line-height: 1.6;
+        margin-bottom: 2rem;
+    }
+
+    .error-actions {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+
+    .btn {
+        padding: 0.75rem 2rem;
+        border-radius: 5px;
+        font-weight: 500;
+        text-decoration: none;
+        border: 1px solid transparent;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .btn-primary {
+        background-color: #007bff;
+        color: white;
+        border-color: #007bff;
+    }
+
+    .btn-primary:hover {
+        background-color: #0056b3;
+        border-color: #0056b3;
+    }
+
+    .btn-outline-secondary {
+        background-color: transparent;
+        color: #6c757d;
+        border-color: #6c757d;
+    }
+
+    .btn-outline-secondary:hover {
+        background-color: #6c757d;
+        color: white;
+    }
+</style>
+
+@code {
+    [Inject] private NavigationManager NavigationManager { get; set; } = default!;
+
+    private void GoHome()
+    {
+        NavigationManager.NavigateTo("/", true);
+    }
+
+    private void GoBack()
+    {
+        NavigationManager.NavigateTo("javascript:history.back()", true);
+    }
+}

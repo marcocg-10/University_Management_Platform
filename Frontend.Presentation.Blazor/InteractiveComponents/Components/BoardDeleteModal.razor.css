@@ -1,0 +1,120 @@
+/* Board Delete Modal Styles*/
+
+.bd-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.35); /* semi-transparent dark overlay */
+    display: grid;
+    place-items: center; /* centers the modal */
+    z-index: 100;
+    overflow: auto; /* enables scrolling if modal taller than screen */
+}
+
+/* Main container of the popup */
+.bd-card {
+    position: relative;
+    width: 280px; /* Sets the popup width to 280px. */
+    max-width: 90vw; /* Ensures it fits smaller screens */
+    max-height: 90vh; /* Limits modal height to screen size */
+    overflow-y: auto; /* Enables internal scroll if content exceeds height */
+    background: #fff; /* Sets a white background color. */
+    border: 0.5px solid #757575; /* Adds a thin gray border. */
+    border-radius: 8px; /* Rounds the corners for a smooth look. */
+    box-shadow: 0 12px 28px rgba(0,0,0,.18); /* Adds a soft shadow for a floating effect. */
+    font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; /* Defines modern system font stack. */
+    z-index: 1100;
+}
+
+/* Header section of the popup */
+.bd-header {
+    display: flex; /* Uses flexbox layout for the header elements. */
+    justify-content: space-between; /* Places the title on the left and the close button on the right. */
+    align-items: center; /* Vertically aligns both elements. */
+    padding: 10px 12px 6px; /* Adds internal spacing: top, sides, bottom. */
+}
+
+/* Title container (holds the icon and the title text) */
+.bd-title-wrap {
+    display: flex; /* Uses flexbox to align icon and text horizontally. */
+    align-items: center; /* Vertically centers icon and text. */
+    gap: 2px; /* Adds spacing between icon and text. */
+}
+
+/* Icon style (small circular info indicator) */
+.bd-icon {
+    display: inline-flex; /* Allows the icon to be centered using flexbox while staying inline. */
+    align-items: center; /* Vertically centers the icon's content. */
+    justify-content: center; /* Horizontally centers the icon's content. */
+}
+
+/* Title text */
+.bd-title {
+    font-weight: 600; /* Semi-bold for better emphasis. */
+    color: #111827; /* Dark gray for strong contrast. */
+}
+
+.bd-close {
+    background: transparent; /* Removes background. */
+    border: 0; /* Removes default button border. */
+    line-height: 1; /* Removes extra vertical spacing. */
+    cursor: pointer; /* Changes the cursor to a pointer on hover. */
+    color: #6b7280; /* Gray color for normal state. */
+    padding: 0 4px; /* Adds minimal horizontal padding for better click area. */
+}
+
+/* Subtitle text (e.g., "Board ID: 983246") */
+.bd-subtitle {
+    padding: 0 12px; /* Adds horizontal spacing from edges. */
+    color: #b45309; /* Uses a darker orange tone for emphasis. */
+    font-size: 13px; /* Slightly smaller than title text. */
+    font-weight: 600; /* Semi-bold for prominence. */
+    margin-top: 2px; /* Adds small space above subtitle. */
+}
+
+/* Highlighted text inside subtitle (for the board ID) */
+.bd-hl {
+    color: #b45309; /* Keeps consistent orange highlight. */
+}
+
+/* Main body text of the popup */
+.bd-body {
+    padding: 8px 12px 0; /* Internal spacing (top and sides, no bottom). */
+    color: #374151; /* Medium gray for body text. */
+    font-size: 13px; /* Standard body text size. */
+}
+
+/* Footer section containing the buttons */
+.bd-footer {
+    padding: 12px; /* Adds internal spacing around buttons. */
+    display: flex; /* Uses flexbox for button layout. */
+    gap: 8px; /* Creates spacing between buttons. */
+    justify-content: flex-start; /* Aligns buttons to the left. */
+}
+
+/* Generic button style */
+.bd-btn {
+    padding: 6px 12px; /* Defines button size. */
+    border-radius: 8px; /* Rounds the corners. */
+    border: 1px solid transparent; /* Keeps a clean borderless look. */
+    font-size: 13px; /* Sets readable text size. */
+    cursor: pointer; /* Changes cursor to pointer to indicate action. */
+}
+
+/* Delete (danger) button */
+.bd-btn-danger {
+    background: #B14212; /* Strong orange-red color to signal destructive action. */
+    color: #fff; /* White text for high contrast. */
+}
+    .bd-btn-danger:hover {
+        background: #9e3610; /* Darker shade on hover for feedback. */
+    }
+
+/* Gray cancel button */
+.bd-btn-cancel {
+    background: #f2f2f2;
+    color: #9f9c9c;
+}
+
+    .bd-btn-cancel:hover {
+        background: #d6d6d6;
+    }

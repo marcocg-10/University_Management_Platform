@@ -1,0 +1,189 @@
+﻿@inject UCR.ECCI.PI.ThemePark.Frontend.Application.InteractiveComponents.Services.IInteractiveComponentService _interactiveComponentService
+@inject UCR.ECCI.PI.ThemePark.Frontend.Application.LearningSpaces.Services.ILearningSpaceService _learningSpaceService
+@using UCR.ECCI.PI.ThemePark.Frontend.Domain.InteractiveComponents.Entities
+@using UCR.ECCI.PI.ThemePark.Frontend.Domain.LearningSpaces.Entities
+@using static UCR.ECCI.PI.ThemePark.Frontend.Presentation.Blazor.Core._2D.MiniMap
+
+
+<MiniMap @ref="miniMap"
+         Height="500"
+         Width="500"
+         OnObjectMoved="HandleMove" />
+
+@code {
+    [Parameter] public IEnumerable<LearningSpace>? LearningSpaces { get; set; }
+    private LearningSpace? LearningSpace;
+    [Parameter] public int? LearningSpaceId { get; set; }
+
+    // Component being edited
+    [Parameter] public string? ComponentId { get; set; }
+    [Parameter] public double? ComponentX { get; set; }
+    [Parameter] public double? ComponentY { get; set; }
+    [Parameter] public double? ComponentZ { get; set; }
+    [Parameter] public double? ComponentWidth { get; set; }
+    [Parameter] public double? ComponentDepth { get; set; }
+    [Parameter] public double? ComponentRotationDeg { get; set; }
+    [Parameter] public string ComponentColor { get; set; } = "green";
+
+    [Parameter] public EventCallback<ObjectPosition> OnObjectMoved { get; set; }
+
+    private MiniMap miniMap = null!;
+
+    // Track last render parameters to avoid heavy redraw
+    private int? _lastLearningSpaceId;
+    private double? _lastX, _lastZ, _lastW, _lastD, _lastR;
+
+    private const string EditedObjectId = "edited-component";
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (miniMap is null)
+            return;
+
+        if (LearningSpaces is null || LearningSpaceId is null)
+        {
+            return;
+        }
+
+        var newSpace = LearningSpaces.FirstOrDefault(ls => ls.Id == LearningSpaceId);
+
+        if (newSpace is null)
+        {
+            return;
+        }
+
+        bool changed = LearningSpace?.Id != newSpace.Id;
+
+        LearningSpace = newSpace;
+
+        if (changed)
+        {
+            await DrawLearningSpace();
+            await DrawStaticObjects();
+            await EnsureOrUpdateEditedObject();
+            CacheEditedValues();
+        }
+        else
+        {
+            await EnsureOrUpdateEditedObject();
+            CacheEditedValues();
+        }
+    }
+
+    private async Task DrawLearningSpace()
+    {
+        await miniMap.ClearObjects();
+        await miniMap.SetZoom(8);
+
+        if (LearningSpace is null)
+        {
+            await miniMap.ClearLearningSpace();
+            return;
+        }
+
+        await miniMap.SetLearningSpace(
+            width: LearningSpace.Dimensions?.Width ?? 50,
+            depth: LearningSpace.Dimensions?.Length ?? 50,
+            centerX: 0,
+            centerY: 0
+        );
+    }
+
+    private async Task DrawStaticObjects()
+    {
+        if (LearningSpace?.Id is null)
+            return;
+
+        int lsId = LearningSpace.Id;
+
+        // Boards
+        var boards = await _interactiveComponentService.ListAllBoardsAsync();
+        foreach (var board in boards.Where(x =>
+            x.LearningSpaceId == lsId &&
+            x.PlateId?.ToString() != ComponentId))
+        {
+            await AddStaticObject(board);
+        }
+
+        // Projectors
+        var projectors = await _interactiveComponentService.ListAllProjectorsAsync();
+        foreach (var projector in projectors.Where(x =>
+            x.LearningSpaceId == lsId &&
+            x.PlateId?.ToString() != ComponentId))
+        {
+            await AddStaticObject(projector);
+        }
+    }
+
+    private async Task AddStaticObject(InteractiveComponent ic)
+    {
+        await miniMap.AddObject(
+            id: ic.PlateId?.ToString() ?? Guid.NewGuid().ToString(),
+            x: ic.Coordinates?.X ?? 0,
+            y: ic.Coordinates?.Z ?? 0,
+            color: "#787878",
+            width: ic.Dimensions?.Width ?? 10,
+            length: ic.Dimensions?.Depth ?? 10,
+            draggable: false,
+            rotationDeg: ic.Rotations?.YAxisRotation ?? 0
+        );
+    }
+
+    private async Task EnsureOrUpdateEditedObject()
+    {
+        if (ComponentX is null || ComponentZ is null || ComponentWidth is null || ComponentDepth is null)
+            return;
+
+        var x = ComponentX.Value;
+        var y = ComponentZ.Value;
+        var w = ComponentWidth.Value;
+        var d = ComponentDepth.Value;
+        var r = ComponentRotationDeg ?? 0;
+
+        bool posUpdated = await miniMap.UpdateObjectPosition(EditedObjectId, x, y);
+        bool sizeUpdated = await miniMap.UpdateObjectScale(EditedObjectId, w, d);
+
+        if (!posUpdated && !sizeUpdated)
+        {
+            await miniMap.AddObject(
+                id: EditedObjectId,
+                x: x,
+                y: y,
+                color: ComponentColor,
+                width: w,
+                length: d,
+                draggable: true,
+                rotationDeg: r
+            );
+        }
+        else
+        {
+            await miniMap.UpdateObjectColor(EditedObjectId, ComponentColor);
+            await miniMap.SetObjectDraggable(EditedObjectId, true);
+            await miniMap.UpdateObjectRotation(EditedObjectId, r);
+        }
+    }
+
+    private void CacheEditedValues()
+    {
+        _lastX = ComponentX;
+        _lastZ = ComponentZ;
+        _lastW = ComponentWidth;
+        _lastD = ComponentDepth;
+        _lastR = ComponentRotationDeg;
+    }
+
+    private async Task HandleMove(ObjectPosition pos)
+    {
+        if (OnObjectMoved.HasDelegate)
+            await OnObjectMoved.InvokeAsync(pos);
+    }
+
+    public async Task ResetAsync()
+    {
+        await miniMap.ClearObjects();
+        await miniMap.ClearLearningSpace();
+        await miniMap.SetZoom(8);
+        _lastLearningSpaceId = null;
+    }
+}

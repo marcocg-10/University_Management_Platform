@@ -1,0 +1,21 @@
+{
+    "name": "UCR.ECCI.PI.ThemePark.Unity.DependencyInjection",
+    "rootNamespace": "UCR.ECCI.PI.ThemePark.Unity.DependencyInjection",
+    "references": [
+        "UCR.ECCI.PI.ThemePark.Unity.Domain",
+        "UCR.ECCI.PI.ThemePark.Unity.Application",
+        "UCR.ECCI.PI.ThemePark.Unity.Infrastructure",
+        "UCR.ECCI.PI.ThemePark.Unity.Presentation",
+        "Zenject",
+        "UCR.ECCI.PI.ThemePark.Unity.Services"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

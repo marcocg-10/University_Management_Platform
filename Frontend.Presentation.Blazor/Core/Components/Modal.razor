@@ -1,0 +1,22 @@
+﻿@if (IsVisible)
+{
+    <div class="modal-overlay @OverlayClass" style="@OverlayStyle">
+        <div class="modal-content @ContentClass" style="@ContentStyle" @onclick:stopPropagation>
+            <button type="button" class="close-btn" aria-label="Close" title="Close" @onclick="Close">&#x2715;</button>
+            @ChildContent
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter] public bool IsVisible { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+
+    [Parameter] public string? OverlayClass { get; set; }
+    [Parameter] public string? OverlayStyle { get; set; }
+    [Parameter] public string? ContentClass { get; set; }
+    [Parameter] public string? ContentStyle { get; set; }
+
+    private void Close() => OnClose.InvokeAsync();
+}

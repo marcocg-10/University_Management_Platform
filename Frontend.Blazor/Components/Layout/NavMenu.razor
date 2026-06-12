@@ -1,0 +1,49 @@
+
+@using UCR.ECCI.PI.ThemePark.Frontend.Presentation.Blazor.Core.Auth.Components
+<div class="container-fluid">
+    <div class="nav-header">
+        <img src="ucr-logo.png" alt="UCR Logo" class="ucr-logo" />
+        <span class="themepark-title">ThemePark</span>
+    </div>
+</div>
+
+<div class="nav-scrollable">
+    <nav class="nav flex-column nav-menu">
+        <PermissionGuard RequiredPermission="ListUsers">
+            <NavLink class="nav-menu-item" href="/users">
+                <span class="bi bi-people-fill-nav-menu" aria-hidden="true"></span>
+                Users
+            </NavLink>
+        </PermissionGuard>
+
+        <PermissionGuard RequiredPermission="ManageRoles">
+            <NavLink class="nav-menu-item" href="/roles">
+                <span class="bi bi-person-badge-fill" aria-hidden="true"></span>
+                Roles
+            </NavLink>
+        </PermissionGuard>
+
+        <PermissionGuard RequiredPermission="ListBuildings">
+            <NavLink class="nav-menu-item" href="/buildings">
+                <span class="bi bi-building-fill-nav-menu" aria-hidden="true"></span>
+                Buildings
+            </NavLink>
+        </PermissionGuard>
+
+        <PermissionGuard RequiredPermission="ListLearningSpaces">
+            <NavLink class="nav-menu-item" href="/learning-spaces">
+                <span class="bi bi-learning-space-fill-nav-menu" aria-hidden="true"></span>
+                Learning Spaces
+            </NavLink>
+        </PermissionGuard>
+
+        <PermissionGuard RequiredPermission="ListInterComponents">
+            <NavLink class="nav-menu-item" href="/interactive-components">
+                <span class="bi bi-interactive-components-fill-nav-menu" aria-hidden="true"></span>
+                Interactive Components
+            </NavLink>
+        </PermissionGuard>
+        <LoginOrLogout1/>
+    </nav>
+</div>
+

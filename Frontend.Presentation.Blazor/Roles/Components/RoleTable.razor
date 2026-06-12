@@ -1,0 +1,146 @@
+﻿@using UCR.ECCI.PI.ThemePark.Frontend.Application.Roles.Services
+@using UCR.ECCI.PI.ThemePark.Frontend.Application.Permissions.Services
+@using UCR.ECCI.PI.ThemePark.Frontend.Domain.Permissions.Entities
+@using UCR.ECCI.PI.ThemePark.Frontend.Domain.Roles.Entity
+@using UCR.ECCI.PI.ThemePark.Frontend.Presentation.Blazor.Core.Components
+@using UCR.ECCI.PI.ThemePark.Frontend.Domain.Roles.Exceptions
+@using UCR.ECCI.PI.ThemePark.Frontend.Presentation.Blazor.Core.Components.Icons
+@using Microsoft.Extensions.Logging
+@inject ILogger<RoleTable> Logger
+@inject IRoleService RoleService
+@inject IPermissionService PermissionService
+@inject IToastService ToastService
+
+@if (Roles != null && Roles.Any())
+{
+    <div class="position-relative">
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th class="header-cell-blue">Name</th>
+                    <th class="header-cell-blue">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var role in Roles)
+                {
+                    <tr>
+                        <td class="data-cell-gray">@role.Name.Value</td>
+                        <td class="data-cell-gray">
+                            <div class="d-flex gap-1">
+                            <button class="btn btn-details-blue rounded-circle d-flex align-items-center justify-content-center p-0"
+                                    style="width: 32px; height: 32px;"
+                                    @onclick="() => ShowDetails(role)">
+                                <InfoIcon />
+                            </button>
+                            <button class="btn btn-edit-green2 rounded-circle d-flex align-items-center justify-content-center p-0"
+                                    style="width: 32px; height: 32px;"
+                                    @onclick="() => ShowAssign(role)">
+                                <EditIcon />
+                            </button>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+else
+{
+    <p class="text-muted fst-italic">No roles found.</p>
+}
+
+<RoleDetailsModal IsVisible="@isDetailsVisible"
+                  OnClose="HideDetails"
+                  RoleObject="@selectedRole"
+                  Permissions ="@assignedPermissions"              
+                  ContentClass="modal-content-fill"
+                  ContentStyle="width: 30vw; max-width: 400px; max-height: 65vh; overflow:auto;"
+                  OverlayStyle="align-items:flex-start; padding-top:5vh;" />
+
+<AssignPermissionsModal IsVisible="@isAssignVisible"
+                         OnAssign="RefreshRolePermissions"
+                         OnClose="HideAssign"
+                         RoleObject="@selectedRole"
+                         AvailablePermissions="@availablePermissions"
+                         Permissions="@assignedPermissions"
+                         ContentClass="modal-content-fill"
+                         ContentStyle="width: 30vw; max-width: 400px; max-height: 65vh; overflow:auto;"
+                         OverlayStyle="align-items:flex-start; padding-top:5vh;" />
+
+@code {
+    [Parameter]
+    public IEnumerable<Role> Roles { get; set; } = Enumerable.Empty<Role>();
+
+    private bool isDetailsVisible = false;
+    private bool isAssignVisible = false;
+    private bool fromEditButton = false;
+    private bool _saving;
+
+    private Role? selectedRole;
+
+    private IEnumerable<Permission> assignedPermissions = Enumerable.Empty<Permission>();
+    private IEnumerable<Permission> availablePermissions = Enumerable.Empty<Permission>();
+
+    private async Task ShowDetails(Role role)
+    {
+        selectedRole = role;
+        // Ensure we have the latest assigned
+        var (permissionList, errorMessage) = await RoleService.GetRolePermissionsAsync(role);
+        assignedPermissions = permissionList ?? Enumerable.Empty<Permission>();
+
+        isDetailsVisible = true;
+        StateHasChanged();
+    }
+
+    private async Task ShowAssign(Role role)
+    {
+        // fromEditButton = true;
+        selectedRole = role;
+        // Ensure we have the latest assigned
+        var (permissionList, _) = await RoleService.GetRolePermissionsAsync(role);
+        assignedPermissions = permissionList ?? Enumerable.Empty<Permission>();
+
+        // Fetch all and filter unassigned
+        var allPermissions = await PermissionService.GetAllPermissionsAsync();
+        var assignedIds = new HashSet<int>(assignedPermissions.Select(p => p.Id));
+        availablePermissions = allPermissions.Where(p => !assignedIds.Contains(p.Id));
+
+        isAssignVisible = true;
+        StateHasChanged();
+	}
+
+    private void HideDetails()
+    {
+        isDetailsVisible = false;
+        // fromEditButton = false;
+        // Keep selectedRole to allow opening Assign modal from details action
+    }
+
+    private async Task RefreshRolePermissions()
+    {
+        if (selectedRole is null) return;
+
+        var (permissionList, _) = await RoleService.GetRolePermissionsAsync(selectedRole);
+        assignedPermissions = permissionList ?? Enumerable.Empty<Permission>();
+
+        // Refresh available permissions too
+        
+        var allPermissions = await PermissionService.GetAllPermissionsAsync();
+        var assignedIds = new HashSet<int>(assignedPermissions.Select(p => p.Id));
+        availablePermissions = allPermissions.Where(p => !assignedIds.Contains(p.Id));
+        
+
+        StateHasChanged();
+    }
+
+    private void HideAssign()
+    {
+        isAssignVisible = false;
+        selectedRole = null;
+        availablePermissions = Enumerable.Empty<Permission>();
+       //  fromEditButton = false;
+    }
+}

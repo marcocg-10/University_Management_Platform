@@ -1,0 +1,38 @@
+name: Daily Report (PRs & Commits)
+
+on:
+  schedule:
+    - cron: '0 19 * * *'  # Runs every day at 7:00 PM UTC
+  workflow_dispatch:  # Allows manual triggering
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  send_daily_report:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Fetch recent PRs and commits
+        id: data
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BRANCH: development
+          SHOW_PAYLOAD: true
+        run: node .github/scripts/fetch-daily-report.js
+
+      - name: Send report to n8n webhook
+        env:
+          WEBHOOK_URL: ${{ secrets.N8N_WEBHOOK_URL }}
+        run: |
+          echo "🚀 Sending payload to n8n..."
+          curl -s -X POST \
+            -H "Content-Type: application/json" \
+            -d @payload.json \
+            "$WEBHOOK_URL"
+          echo ""
+          echo "✅ Report sent successfully"

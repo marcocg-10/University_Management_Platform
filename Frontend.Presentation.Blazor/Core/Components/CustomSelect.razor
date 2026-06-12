@@ -1,0 +1,129 @@
+@typeparam TItem
+
+<div class="custom-select-container @(Disabled ? "disabled" : "")">
+    <div class="select-header"
+         role="button"
+         aria-haspopup="listbox"
+         aria-expanded="@isOpen"
+         @onclick="ToggleDropdown">
+        <span class="select-label">@GetDisplayText()</span>
+        <span class="select-arrow">▼</span>
+    </div>
+
+    @if (isOpen)
+    {
+        <div class="select-dropdown" role="listbox">
+            @if (EnableSearch)
+            {
+                <div class="search-container">
+                    <input type="text"
+                           class="search-input"
+                           placeholder="@SearchPlaceholder"
+                           @bind="searchTerm"
+                           @bind:event="oninput"
+                           @onclick:stopPropagation="true" />
+                </div>
+            }
+
+            <div class="options-list">
+                @foreach (var item in FilteredItems)
+                {
+                    <div class="option-item @(IsSelected(item) ? "selected" : "")"
+                         role="option"
+                         aria-selected="@IsSelected(item)"
+                         @onclick="() => SelectItem(item)">
+                        @GetItemDisplayText(item)
+                    </div>
+                }
+                @if (!FilteredItems.Any())
+                {
+                    <div class="no-results">@NoResultsText</div>
+                }
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public IEnumerable<TItem> Items { get; set; } = Array.Empty<TItem>();
+
+    [Parameter]
+    public TItem? SelectedItem { get; set; }
+
+    [Parameter]
+    public EventCallback<TItem?> SelectedItemChanged { get; set; }
+
+    [Parameter, EditorRequired]
+    public Func<TItem, string> GetItemText { get; set; } = item => item?.ToString() ?? string.Empty;
+
+    [Parameter]
+    public Func<TItem, object> GetItemKey { get; set; } = item => item!;
+
+    [Parameter]
+    public string Placeholder { get; set; } = "Select an option";
+
+    [Parameter]
+    public string SearchPlaceholder { get; set; } = "Search";
+
+    [Parameter]
+    public string NoResultsText { get; set; } = "No results found";
+
+    [Parameter]
+    public bool EnableSearch { get; set; } = true;
+
+    [Parameter]
+    public bool Disabled { get; set; } = false;
+
+    [Parameter]
+    public string CssClass { get; set; } = string.Empty;
+
+    [Parameter(CaptureUnmatchedValues = true)]
+    public Dictionary<string, object>? AdditionalAttributes { get; set; }
+
+    private string searchTerm = string.Empty;
+    private bool isOpen = false;
+
+    private IEnumerable<TItem> FilteredItems =>
+        string.IsNullOrWhiteSpace(searchTerm)
+            ? Items
+            : Items.Where(item => GetItemText(item).Contains(searchTerm, StringComparison.OrdinalIgnoreCase));
+
+    private string GetDisplayText()
+    {
+        return SelectedItem != null ? GetItemText(SelectedItem) : Placeholder;
+    }
+
+    private string GetItemDisplayText(TItem item)
+    {
+        return GetItemText(item);
+    }
+
+    private bool IsSelected(TItem item)
+    {
+        if (SelectedItem == null || item == null)
+            return false;
+
+        return GetItemKey(item).Equals(GetItemKey(SelectedItem));
+    }
+
+    private void ToggleDropdown()
+    {
+        if (Disabled)
+            return;
+
+        isOpen = !isOpen;
+        if (!isOpen)
+        {
+            searchTerm = string.Empty;
+        }
+    }
+
+    private async Task SelectItem(TItem item)
+    {
+        SelectedItem = item;
+        isOpen = false;
+        searchTerm = string.Empty;
+        await SelectedItemChanged.InvokeAsync(item);
+    }
+}

@@ -1,0 +1,1 @@
+kiota generate -l CSharp -c ApiClient -n UCR.ECCI.PI.ThemePark.Unity.Infrastructure.Kiota -d ..\..\..\..\Backend.Api\UCR.ECCI.PI.ThemePark.Backend.Api.json -o Kiota

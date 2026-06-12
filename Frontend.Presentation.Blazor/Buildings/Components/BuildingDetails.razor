@@ -1,0 +1,214 @@
+@rendermode InteractiveServer
+
+@using UCR.ECCI.PI.ThemePark.Frontend.Domain.Buildings.Entities
+@inject NavigationManager NavigationManager
+
+@if (IsVisible)
+{
+    <div class="modal fade show d-block" tabindex="-1" role="dialog" aria-modal="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable" role="document">
+            <div class="modal-content shadow">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold">Building Details</h5>
+                    <button type="button" class="btn-close" aria-label="Close" @onclick="OnClose"></button>
+                </div>
+                <div class="modal-body d-flex gap-3">
+                    <div class="form-content-container">
+
+                    @if (Building is null)
+                    {
+                        <p>No building selected.</p>
+                    }
+                    else
+                    {
+                        <div class="d-flex flex-column gap-3 mb-3">
+                            <div class="row g-3">
+                                <div class="col-12 col-md-6">
+                                    <label class="form-label fw-bold">Code</label>
+                                    <div class="form-control-plaintext border rounded p-2 bg-light">
+                                        @Building.OfficialId
+                                    </div>
+                                </div>
+
+                                <div class="col-12 col-md-6">
+                                    <label class="form-label fw-bold">Name</label>
+                                    <div class="form-control-plaintext border rounded p-2 bg-light">
+                                        @Building.Name
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row g-3">
+                                <div class="col-12 col-md-6">
+                                    <label class="form-label fw-bold">Floor Count</label>
+                                    <div class="form-control-plaintext border rounded p-2 bg-light text-end input-short value-right">
+                                        @Building.FloorCount
+                                    </div>
+                                </div>
+                            </div>
+
+                            <hr class="my-1" />
+                            <div class="d-flex align-items-center mb-3" style="gap: 16px;">
+                                <div class="d-flex flex-column align-items-start">
+                                    <label class="form-label fw-bold mb-1">Color</label>
+                                    <div class="color-box"
+                                         style="background-color: @Building.RenderInfo.Color;">
+                                    </div>
+                                </div>
+                                <div class="d-flex flex-column align-items-start">
+                                    <label class="form-label fw-bold mb-1">Texture</label>
+                                    <div class="texture-preview-box">
+                                        <img src="@GetTextureUrl(Building.RenderInfo.Texture)"
+                                             alt="Building texture"
+                                             class="texture-image" />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <hr class="my-1" />
+                            <h6 class="fw-bold mb-1">Dimensions (meters)</h6>
+                            <div class="row g-3 mb-2">
+                                    <div class="col-12 col-md-4">
+                                    <label class="form-label">Height</label>
+                                    <div class="form-control-plaintext border rounded p-2 bg-light text-end input-short2 value-right">
+                                        @Building.RenderInfo.Height
+                                    </div>
+                                </div>
+                                    <div class="col-12 col-md-4">
+                                    <label class="form-label">Width</label>
+                                    <div class="form-control-plaintext border rounded p-2 bg-light text-end input-short2 value-right">
+                                        @Building.RenderInfo.Width
+                                    </div>
+                                </div>
+                                <div class="col-12 col-md-4">
+                                    <label class="form-label">Depth</label>
+                                    <div class="form-control-plaintext border rounded p-2 bg-light text-end input-short2 value-right">
+                                        @Building.RenderInfo.Depth
+                                    </div>
+                                </div>
+                            </div>
+
+                            <h6 class="fw-bold mb-1">Coordinates</h6>
+                            <div class="row g-3 mb-2">
+                                    <div class="col-12 col-md-4">
+                                    <label class="form-label">X</label>
+                                    <div class="form-control-plaintext border rounded p-2 bg-light text-end input-short2 value-right">
+                                        @Building.RenderInfo.X
+                                    </div>
+                                </div>
+                                    <div class="col-12 col-md-4">
+                                    <label class="form-label">Y</label>
+                                    <div class="form-control-plaintext border rounded p-2 bg-light text-end input-short2 value-right">
+                                        @Building.RenderInfo.Y
+                                    </div>
+                                </div>
+                                    <div class="col-12 col-md-4">
+                                    <label class="form-label">Z</label>
+                                    <div class="form-control-plaintext border rounded p-2 bg-light text-end input-short2 value-right">
+                                        @Building.RenderInfo.Z
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                    </div>
+                    <BuildingsMinimap @ref="_buildingsMinimap" @key="Building?.Id" />
+                </div>
+            </div>
+        </div>
+        </div>
+    <div class="modal-backdrop fade show"></div>
+
+<style>
+    .input-short {
+        max-width: 4em;
+        min-width: 3em;
+        width: 100%;
+        text-align: center;
+    }
+
+    .input-short2 {
+        max-width: 6em;
+        min-width: 6em;
+        width: 100%;
+        text-align: center;
+    }
+
+    .value-right {
+        text-align: right;
+    }
+</style>
+}
+
+@code {
+    private BuildingsMinimap? _buildingsMinimap;
+
+    [Parameter] public bool IsVisible { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public Building? Building { get; set; }
+    private EditableBuildingModel EditableBuilding { get; set; } = new();
+
+    /// <summary>
+    /// Model class for editable building data.
+    /// </summary>
+    private class EditableBuildingModel
+    {
+        public string Name { get; set; } = string.Empty;
+        public int? FloorCount { get; set; }
+        public EditableRenderInfo RenderInfo { get; set; } = new EditableRenderInfo();
+    }
+
+    /// <summary>
+    /// Model class for editable render information.
+    /// </summary>
+    private class EditableRenderInfo
+    {
+        public string Color { get; set; } = "#CDCECF";
+        public decimal? Height { get; set; }
+        public decimal? Width { get; set; }
+        public decimal? Depth { get; set; }
+        public decimal? X { get; set; }
+        public decimal? Y { get; set; }
+        public decimal? Z { get; set; }
+        public string Texture { get; set; } = string.Empty;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_buildingsMinimap is not null && IsVisible)
+        {
+            await _buildingsMinimap.ResetMiniMap();
+
+            if (Building is not null)
+            {
+                await _buildingsMinimap.LoadBuildingAlreadyCreated(Building.Id, false);
+            }
+        }
+    }
+
+
+    private const string _assetsBasePath = "assets/buildings/textures/";
+
+    private readonly string[] _textureOptions =
+    [
+        "Outdoor_Wall_T02_Height.png",
+        "Outdoor_Wall_T04_Ambient_occlusion.png",
+        "Outdoor_Wall_T12_Roughness.png"
+    ];
+
+    private string GetTextureUrl(string fileName) => $"{NavigationManager.BaseUri}{_assetsBasePath}{fileName}";
+   
+    private void SelectTexture(string path)
+    {
+        EditableBuilding.RenderInfo.Texture = path;
+    }
+
+    private void OnTextureKeyDown(KeyboardEventArgs e, string path)
+    {
+        if (e.Key is "Enter" or " " or "Spacebar")
+        {
+            SelectTexture(path);
+        }
+    }
+}
+

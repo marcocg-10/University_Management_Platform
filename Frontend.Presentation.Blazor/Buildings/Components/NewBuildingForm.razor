@@ -1,0 +1,518 @@
+﻿@rendermode InteractiveServer
+
+@using Microsoft.AspNetCore.Components.Forms
+@using UCR.ECCI.PI.ThemePark.Frontend.Presentation.Blazor.Buildings.Models
+@using UCR.ECCI.PI.ThemePark.Frontend.Application.Buildings.Services
+@using UCR.ECCI.PI.ThemePark.Frontend.Domain.Buildings.Entities
+@inject IBuildingService BuildingService
+@inject NavigationManager NavigationManager
+
+<h5 class="modal-title fw-bold header-divider">Create Building</h5>
+@if (!string.IsNullOrWhiteSpace(_error))
+{
+    <span class="alert-danger"> @_error </span>
+}
+
+<EditForm id="create-building-form" class="d-flex gap-3" Model="@_model" OnValidSubmit="HandleValidSubmit">
+
+<div class="form-content-container">
+    <div class="row-container">
+        <div class="form-group" style="flex:1;">
+            <CustomInput 
+                Label="Code"
+                BoldLabel="true"
+                Placeholder="e.g. ABC-123"
+                ErrorMessage="@codeError"
+                @bind-Value="_model.OfficialId"
+                IsValid="@(!string.IsNullOrWhiteSpace(_model.OfficialId))"
+                OnBlur="@OnCodeBlur"/>
+        </div>
+
+        <div class="form-group" style="flex:2;">
+            <CustomInput 
+                Label="Name"
+                BoldLabel="true"
+                Placeholder="e.g. Computer Science"
+                ErrorMessage="@nameError"
+                @bind-Value="_model.Name"
+                IsValid="@(!string.IsNullOrWhiteSpace(_model.Name) && System.Text.RegularExpressions.Regex.IsMatch(_model.Name, @"^[^\d]+$"))"
+                OnBlur="@OnNameBlur" />
+        </div>
+	</div>
+
+    <div class="form-group">
+        <CustomInput Label="Floor count"
+                     BoldLabel="true"
+                     Placeholder="e.g. 5"
+                     ErrorMessage="@floorCountError"
+                     @bind-Value="_model.FloorCount"
+                     IsValid="@(_model.FloorCount >= 1 && _model.FloorCount <= 10)"
+                     Type="number"
+                     OnBlur="@OnFloorCountBlur"
+                     InputClass="input-short input-right" />
+    </div>
+
+    <hr class="my-2" />
+    <div class="row-container"> 
+        <div class="form-group">
+            <CustomInput 
+                Label="Color"
+                BoldLabel="true"
+                ErrorMessage="@colorError"
+                @bind-Value="_model.Color"
+                IsValid="@(!string.IsNullOrWhiteSpace(_model.Color))"
+                Type="color"
+                OnBlur="@OnColorBlur"
+                OnInput="@UpdateObjectColor" />
+        </div>
+        <span style="background-color: @_model.Color; display: inline-block; width: 20px; height: 20px; border: 1px solid #000; margin: 30px 0 0 10px"></span>
+    </div>
+
+    <h6 class="fw-bold mb-2">Texture</h6>
+    <InputText class="d-none" @bind-Value="_model.Texture" />
+    <ValidationMessage For="@(() => _model.Texture)" />
+
+    <div class="texture-grid">
+        @foreach (var tex in _textureOptions)
+        {
+            var isSelected = string.Equals(_model.Texture, tex, StringComparison.OrdinalIgnoreCase);
+            var url = GetTextureUrl(tex);
+            <img src="@url"
+                 alt="Texture option"
+                 class="texture-option @(isSelected ? "selected" : null)"
+                 role="button"
+                 tabindex="0"
+                 aria-pressed="@(isSelected ? "true" : "false")"
+                 @onclick="@(() => SelectTexture(tex))"
+                 @onkeydown="@(e => OnTextureKeyDown(e, tex))" />
+        }
+    </div>
+
+    <hr class="my-2" />
+    <label class="form-label fw-bold" style="margin-bottom: 0.5em;">Dimensions (meters)</label>
+    <div class="row-container">
+        <div class="form-group">
+            <CustomInput Label="Height"
+                         Placeholder="e.g. 60.2"
+                         ErrorMessage="@heightError"
+                         @bind-Value="_model.Height"
+                         IsValid="@(_model.Height >= 0.1m)"
+                         Type="number"
+                         OnBlur="@OnHeightBlur"
+                             CssClass="input-short input-right" />
+        </div>
+
+        <div class="form-group">
+            <CustomInput Label="Width"
+                         Placeholder="e.g. 54.6"
+                         ErrorMessage="@widthError"
+                         @bind-Value="_model.Width"
+                         IsValid="@(_model.Width >= 0.1m)"
+                         Type="number"
+                         OnBlur="@OnWidthBlur"
+                             CssClass="input-short input-right"
+                         OnInput="@UpdateObjectScale" />
+        </div>
+
+        <div class="form-group">
+            <CustomInput Label="Depth"
+                         Placeholder="e.g. 47.8"
+                         ErrorMessage="@depthError"
+                         @bind-Value="_model.Depth"
+                         IsValid="@(_model.Depth >= 0.1m)"
+                         Type="number"
+                         OnBlur="@OnDepthBlur"
+                             CssClass="input-short input-right"
+                         OnInput="@UpdateObjectScale" />
+        </div>
+    </div>
+
+    <label class="form-label fw-bold" style="margin-bottom: 0.5em;">Coordinates</label>
+    <div class="row-container">
+        <div class="form-group">
+            <CustomInput Label="X"
+                         Placeholder="e.g. 232"
+                         ErrorMessage="@xError"
+                         @bind-Value="_model.PositionX"
+                         IsValid="true"
+                             Type="decimal"
+                         OnBlur="@OnXBlur"
+                             CssClass="input-short input-right"
+                         OnInput="@UpdateMinimapPosition" />
+        </div>
+
+         <div class="form-group">
+            <CustomInput Label="Y"
+                         Placeholder="0"
+                         ErrorMessage="@yError"
+                         @bind-Value="_model.PositionY"
+                         IsValid="true"
+                         Type="decimal"
+                         Disabled="true"
+                         OnBlur="@OnYBlur"
+                             CssClass="input-short input-right"/>
+
+        </div>
+
+        <div class="form-group">
+            <CustomInput Label="Z"
+                         Placeholder="e.g. 127"
+                         ErrorMessage="@zError"
+                         @bind-Value="_model.PositionZ"
+                         IsValid="true"
+                             Type="decimal"
+                         OnBlur="@OnZBlur"
+                             CssClass="input-short input-right"
+                         OnInput="@UpdateMinimapPosition" />
+        </div>
+    </div>
+
+    <CustomButton 
+        Type="CustomButton.ButtonType.Submit"
+        Disabled="@_submitting"
+		Block="true" 
+        Form="create-building-form">
+        @if (_submitting)
+        {
+            <span>Creating...</span>
+        }
+        else
+        {
+            <span>Add</span>
+        }
+    </CustomButton>
+</div>
+    <BuildingsMinimap 
+        OnObjectMoved="HandleMove" 
+        Model="_model" 
+        @ref="_buildingsMinimap" />
+</EditForm>
+
+<style>
+    .row-container {
+        display: flex;
+        gap: 1em;
+    }
+    .validation-message {
+        color: red;
+        font-size: 0.8em;
+        margin-top: 0.2em;
+    }
+    .form-group {
+        margin-bottom: 1em;
+    }
+    .alert {
+        padding: 1em;
+        margin-bottom: 1em;
+        border-radius: 4px;
+    }
+    .alert-danger {
+        background-color: #f8d7da;
+        border-color: #f5c6cb;
+        color: #721c24;
+    }
+    .alert-success {
+        background-color: #d4edda;
+        border-color: #c3e6cb;
+        color: #155724;
+    }
+    .end-p {
+        margin-top: 1em;
+    }
+    .header-divider {
+        border-bottom: 2px solid #dee2e6; 
+        padding-bottom: 0.5em;
+        margin-bottom: 1em;
+    }
+    .input-short {
+        width: 12.2em;
+    }
+    .form-group [placeholder="e.g. 5"] {
+       max-width: 6em;
+       min-width: 3em;
+       text-align: center;
+   }
+    .input-right {
+       text-align: right;
+    }
+    .form-group input[type="number"] {
+        text-align: right !important;
+    }
+</style>
+
+@code {
+    private BuildingsMinimap? _buildingsMinimap;
+
+    private string _IdPreview = "New";
+
+    private string codeError = "";
+    private string nameError = "";
+    private string colorError = "";
+    private string floorCountError = "";
+    private string heightError = "";
+    private string widthError = "";
+    private string depthError = "";
+    private string xError = "";
+    private string yError = "";
+    private string zError = "";
+    private string textureError = "";
+
+    private bool _submitting = false;
+    private string? _error;
+    private BuildingFormModel _model = new();
+
+    Task HandleMove(MiniMap.ObjectPosition pos)
+    {
+        _model.PositionX = (decimal)Math.Round(pos.X, 1);
+        _model.PositionY = 0;
+        _model.PositionZ = (decimal)Math.Round(pos.Y, 1);
+
+        Console.WriteLine("Model new position:" +
+            $" X: {_model.PositionX}, " +
+            $"Y: {_model.PositionY}, " +
+            $"Z: {_model.PositionZ}");
+
+        Console.WriteLine($"Building moved to X: {pos.X}, Y: {pos.Y}");
+
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+
+    private async Task UpdateMinimapPosition()
+    {
+        if (_buildingsMinimap is not null)
+        {
+            await _buildingsMinimap.UpdatePosition(
+                _IdPreview,
+                (double)(_model.PositionX ?? 0),
+                (double)(_model.PositionZ ?? 0));
+        }
+    }
+
+    private async Task UpdateObjectScale()
+    {
+        if (_buildingsMinimap is not null)
+        {
+            await _buildingsMinimap.UpdateScale(
+                _IdPreview,
+                (double)(_model.Width ?? 10),
+                (double)(_model.Depth ?? 10));
+        }
+    }
+
+    private async Task UpdateObjectColor()
+    {
+        if (_buildingsMinimap is not null)
+        {
+            await _buildingsMinimap.UpdateObjectColor(
+                _IdPreview,
+                _model.Color ?? "#000000");
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && _buildingsMinimap is not null)
+        {
+            await _buildingsMinimap.ResetMiniMap();
+            await _buildingsMinimap.LoadBuildings();
+            await _buildingsMinimap.PreviewBuilding(_model);
+        }
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (_buildingsMinimap is not null)
+        {
+            await _buildingsMinimap.ResetMiniMap();
+        }
+    }
+
+    private bool ValidateForm()
+    {
+        bool isValid = true;
+
+        codeError = string.IsNullOrWhiteSpace(_model.OfficialId) ? "Building code is required" : "";
+        nameError = string.IsNullOrWhiteSpace(_model.Name)
+        ? "Name is required"
+        : (!System.Text.RegularExpressions.Regex.IsMatch(_model.Name, @"^[^\d]+$") 
+            ? "Name must not contain numbers" 
+            : "");
+        colorError = string.IsNullOrWhiteSpace(_model.Color) ? "Color is required" : "";
+        floorCountError = (_model.FloorCount < 1 || _model.FloorCount > 10) ? "Floor count must be between 1 and 10" : "";
+        heightError = _model.Height < 0.1m ? "Height must be greater than 0" : "";
+        widthError = _model.Width < 0.1m ? "Width must be greater than 0" : "";
+        depthError = _model.Depth < 0.1m ? "Depth must be greater than 0" : "";
+        xError = "";
+        yError = "";
+        zError = "";
+        textureError = string.IsNullOrWhiteSpace(_model.Texture)
+            ? "Texture is required"
+            : (!_textureOptions.Contains(_model.Texture)
+                ? "You must select one of the available texture options"
+                : "");
+
+        isValid &= string.IsNullOrEmpty(codeError);
+        isValid &= string.IsNullOrEmpty(nameError);
+        isValid &= string.IsNullOrEmpty(colorError);
+        isValid &= string.IsNullOrEmpty(floorCountError);
+        isValid &= string.IsNullOrEmpty(heightError);
+        isValid &= string.IsNullOrEmpty(widthError);
+        isValid &= string.IsNullOrEmpty(depthError);
+        isValid &= string.IsNullOrEmpty(xError);
+        isValid &= string.IsNullOrEmpty(yError);
+        isValid &= string.IsNullOrEmpty(zError);
+
+        return isValid;
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        _error = null;
+        _submitting = true;
+
+        if (!ValidateForm())
+        {
+            _submitting = false;
+            StateHasChanged();
+            return;
+        }
+
+        try
+        {
+            BuildingRenderInfo renderInfo = new BuildingRenderInfo(
+                _model.Color!,
+                _model.Height ?? 0m,
+                _model.Width ?? 0m,
+                _model.Depth ?? 0m,
+                _model.PositionX ?? 0m,
+                _model.PositionY ?? 0m,
+                _model.PositionZ ?? 0m,
+                _model.Texture!
+            );
+
+            Building building = new Building(
+                _model.OfficialId!,
+                _model.Name!,
+                _model.FloorCount ?? 1,
+                renderInfo
+            );
+
+            await BuildingService.CreateBuildingAsync(building);
+
+            if (OnValidSubmit.HasDelegate)
+            {
+                await OnValidSubmit.InvokeAsync(_model);
+            }
+
+            if (_buildingsMinimap is not null)
+            {
+                await _buildingsMinimap.ResetMiniMap();
+            }
+
+            NavigationManager.NavigateTo(NavigationManager.Uri, forceLoad: true);
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+            Console.WriteLine(_error);
+        }
+        finally
+        {
+            _submitting = false;
+            StateHasChanged();
+        }
+    }
+
+    [Parameter]
+    public EventCallback<BuildingFormModel> OnValidSubmit { get; set; }
+
+    private const string _assetsBasePath = "assets/buildings/textures/";
+
+    private readonly string[] _textureOptions =
+    [
+        "Outdoor_Wall_T02_Height.png",
+        "Outdoor_Wall_T04_Ambient_occlusion.png",
+        "Outdoor_Wall_T12_Roughness.png"
+    ];
+
+    private string GetTextureUrl(string fileName) => $"{NavigationManager.BaseUri}{_assetsBasePath}{fileName}";
+
+    private void SelectTexture(string path)
+    {
+        _model.Texture = path;
+    }
+
+    private void OnTextureKeyDown(KeyboardEventArgs e, string path)
+    {
+        if (e.Key is "Enter" or " " or "Spacebar")
+        {
+            SelectTexture(path);
+        }
+    }
+
+    private void OnFloorCountBlur()
+    {
+        floorCountError = (_model.FloorCount < 1 || _model.FloorCount > 10) ? "Floor count must be between 1 and 10" : "";
+        StateHasChanged();
+    }
+
+    private void OnHeightBlur()
+    {
+        heightError = _model.Height < 0.1m ? "Height must be greater than 0" : "";
+        StateHasChanged();
+    }
+
+    private void OnWidthBlur()
+    {
+        widthError = _model.Width < 0.1m ? "Width must be greater than 0" : "";
+        StateHasChanged();
+    }
+
+    private void OnDepthBlur()
+    {
+        depthError = _model.Depth < 0.1m ? "Depth must be greater than 0" : "";
+        StateHasChanged();
+    }
+
+    private void OnXBlur()
+    {
+        xError = string.IsNullOrWhiteSpace(_model.PositionX.ToString()) ? "X coordinate is required" : "";
+        StateHasChanged();
+    }
+
+    private void OnYBlur()
+    {
+        yError = string.IsNullOrWhiteSpace(_model.PositionY.ToString()) ? "Y coordinate is required" : "";
+        StateHasChanged();
+    }
+
+    private void OnZBlur()
+    {
+        zError = string.IsNullOrWhiteSpace(_model.PositionZ.ToString()) ? "Z coordinate is required" : "";
+        StateHasChanged();
+    }
+
+    private void OnCodeBlur()
+    {
+        codeError = string.IsNullOrWhiteSpace(_model.OfficialId) ? "Building code is required" : "";
+        StateHasChanged();
+    }
+
+    private void OnNameBlur()
+    {
+        nameError = string.IsNullOrWhiteSpace(_model.Name)
+            ? "Name is required"
+            : (!System.Text.RegularExpressions.Regex.IsMatch(_model.Name, @"^[^\d]+$") 
+                ? "Name must not contain numbers" 
+                : "");
+        StateHasChanged();
+    }
+
+    private void OnColorBlur()
+    {
+        colorError = string.IsNullOrWhiteSpace(_model.Color) ? "Color is required" : "";
+        StateHasChanged();
+    }
+}

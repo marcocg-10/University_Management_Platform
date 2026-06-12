@@ -1,0 +1,206 @@
+﻿@using UCR.ECCI.PI.ThemePark.Frontend.Application.Users.Services
+@using UCR.ECCI.PI.ThemePark.Frontend.Application.Roles.Services
+@using UCR.ECCI.PI.ThemePark.Frontend.Domain.Roles.Entity
+@using UCR.ECCI.PI.ThemePark.Frontend.Domain.Roles.Exceptions
+@using UCR.ECCI.PI.ThemePark.Frontend.Domain.Users.Entities
+@using UCR.ECCI.PI.ThemePark.Frontend.Presentation.Blazor.Core.Components
+@using UCR.ECCI.PI.ThemePark.Frontend.Presentation.Blazor.Roles.Components
+@using UCR.ECCI.PI.ThemePark.Frontend.Presentation.Blazor.Core.Components.Icons
+
+@inject IUserService UserService
+@inject IRoleService RoleService
+@inject IToastService ToastService
+
+
+@if (Users?.Any(u => u.IsActive) == true)
+{
+    <div class="position-relative">
+        <NotificationToastCore Visible="@toastVisible"
+                               Message="@toastMessage"
+                               Type="@toastType"
+                               InsideModal="false"
+                               OnClose="@HideToast" />
+        <table class="table">
+        <thead>
+            <tr>
+                <th class="header-cell-blue">Official ID</th>
+                <th class="header-cell-blue">Name</th>
+                <th class="header-cell-blue">Email</th>
+                <th class="header-cell-blue">Status</th>
+                <th class="header-cell-blue">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var user in Users.Where(u => u.IsActive))
+            {
+                <tr>
+                    <td class="data-cell-gray">@user.Id.Value</td>
+                    <td class="data-cell-gray">@user.Name.Value</td>
+                    <td class="data-cell-gray">@user.Email.Value</td>
+                    <td class="data-cell-gray"><span>Active</span></td>
+                    <td class="data-cell-gray">
+                        <div class="d-flex gap-1">
+                            <button class="btn btn-details-blue rounded-circle d-flex align-items-center justify-content-center p-0"
+                                    style="width: 32px; height: 32px;"
+                                    @onclick="() => ShowDetails(user)">
+                                <InfoIcon />
+                            </button>
+                            <button class="btn btn-edit-green2 rounded-circle d-flex align-items-center justify-content-center p-0"
+                                    style="width: 32px; height: 32px;"
+                                    @onclick="() => ShowAssign(user)">
+                                <EditIcon />
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+    </div>
+}
+else
+{
+    <p class="text-muted fst-italic">No active users found.</p>
+}
+
+<UserDetailsModal IsVisible="@isModalVisible" 
+                  OnClose="HideModal" 
+                  User="@selectedUser"
+                  Roles="@assignedRoles"
+                  ContentClass="modal-content-fill"
+                  ContentStyle="width: 30vw; max-width: 400px; max-height: 65vh; overflow:auto;"
+                  OverlayStyle="align-items:flex-start; padding-top:5vh;" />
+
+
+
+<AssignRolesModal IsVisible="@isAssignVisible"
+                  OnAssign="RefreshUserRoles"
+                  OnClose="HideAssign"
+                  UserObject="@selectedUser"
+                  AvailableRoles="@availableRoles"
+                  Roles="@assignedRoles"
+                  OnNotify="HandleToast"
+                  ContentClass="modal-content-fill"
+                  ContentStyle="width: 30vw; max-width: 400px; max-height: 65vh; overflow:auto;"
+				  OverlayStyle="align-items:flex-start; padding-top:5vh;" />
+
+@code {
+    /// <summary>
+    /// List of users to be displayed in the table.
+    /// This parameter is expected to be provided by the parent component.
+    /// </summary>
+    [Parameter]
+    public IEnumerable<User> Users { get; set; } = Enumerable.Empty<User>();
+
+    private bool isModalVisible = false;
+    private bool isAssignVisible = false;
+    private bool fromEditButton = false; // indicates how details modal was opened
+
+    private User? selectedUser;
+    private IEnumerable<Role> assignedRoles = Enumerable.Empty<Role>();
+    private IEnumerable<Role> availableRoles = Enumerable.Empty<Role>();
+
+    // Toast state and queue
+    private bool toastVisible;
+    private string toastMessage = string.Empty;
+    private string toastType = "success";
+    private readonly Queue<ToastRequest> toastQueue = new();
+    private bool toastShowing;
+
+    private async Task HandleToast(ToastRequest toast)
+    {
+        toastQueue.Enqueue(toast);
+        if (!toastShowing)
+        {
+            await ShowNextToastAsync();
+        }
+    }
+
+    private async Task ShowNextToastAsync()
+    {
+        if (toastQueue.Count == 0)
+        {
+            toastShowing = false;
+            return;
+        }
+
+        toastShowing = true;
+        var next = toastQueue.Dequeue();
+        toastMessage = next.Message;
+        toastType = next.Type;
+        toastVisible = true;
+        StateHasChanged();
+
+        // Auto hide after 2.5s
+        await Task.Delay(2500);
+        toastVisible = false;
+        StateHasChanged();
+
+        // Small gap before next toast
+        await Task.Delay(150);
+        await ShowNextToastAsync();
+    }
+
+    private async Task HideToast()
+    {
+        toastVisible = false;
+        StateHasChanged();
+        await Task.Delay(100);
+    }
+
+    private async Task ShowDetails(User user)
+    {
+        selectedUser = user;
+        var (roleList, _) = await UserService.GetUserRolesAsync(user);
+        assignedRoles = roleList ?? Enumerable.Empty<Role>();
+		
+        isModalVisible = true;
+        StateHasChanged();
+    }
+
+    private async Task ShowAssign(User user)
+    {
+        // Open details first but with Assign action enabled
+        fromEditButton = true;
+        selectedUser = user;
+        var (roleList, _) = await UserService.GetUserRolesAsync(user);
+        assignedRoles = roleList ?? Enumerable.Empty<Role>();
+
+        var allRoles = await RoleService.GetRolesAsync();
+        var assignedIds = new HashSet<int>(assignedRoles.Select(r => r.Id));
+        availableRoles = allRoles.Where(r => !assignedIds.Contains(r.Id)).ToList();
+
+        isAssignVisible = true;
+        StateHasChanged();
+    }
+
+    private void HideModal()
+    {
+        isModalVisible = false;
+        selectedUser = null;
+        fromEditButton = false;
+    }
+
+    private async Task RefreshUserRoles()
+    {
+		// clear selected roles and fetch again
+        if (selectedUser is null) return;
+        var (roleList, _) = await UserService.GetUserRolesAsync(selectedUser);
+        assignedRoles = roleList ?? Enumerable.Empty<Role>();
+
+		// Refresh available roles too
+		var allRoles = await RoleService.GetRolesAsync();
+        var assignedIds = new HashSet<int>(assignedRoles.Select(r => r.Id));
+		availableRoles = allRoles.Where(r => !assignedIds.Contains(r.Id)).ToList();
+
+		StateHasChanged();
+	}
+
+    private void HideAssign()
+    {
+        isAssignVisible = false;
+        selectedUser = null;
+        availableRoles = Enumerable.Empty<Role>();
+       // fromEditButton = false;
+    }
+}

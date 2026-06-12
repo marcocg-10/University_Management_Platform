@@ -1,0 +1,120 @@
+<button type="@GetButtonType()"
+        class="@GetCssClass()"
+        disabled="@Disabled"
+        aria-label="@AriaLabel"
+        form="@Form"
+        @onclick="HandleClick"
+        @attributes="AdditionalAttributes">
+    @if (!string.IsNullOrEmpty(Icon))
+    {
+        <i class="@Icon" aria-hidden="true"></i>
+    }
+    @if (ChildContent != null)
+    {
+        @ChildContent
+    }
+    else if (!string.IsNullOrEmpty(Text))
+    {
+        @Text
+    }
+</button>
+
+@code {
+    public enum ButtonType
+    {
+        Button,
+        Submit,
+        Reset
+    }
+
+    public enum ButtonVariant
+    {
+        Primary,
+        Secondary,
+        Success,
+        Danger
+    }
+
+    public enum ButtonSize
+    {
+        Small,
+        Medium,
+        Large
+    }
+
+    [Parameter] public string Text { get; set; } = string.Empty;
+    [Parameter] public ButtonType Type { get; set; } = ButtonType.Button;
+    [Parameter] public ButtonVariant Variant { get; set; } = ButtonVariant.Primary;
+    [Parameter] public ButtonSize Size { get; set; } = ButtonSize.Medium;
+    [Parameter] public bool Outline { get; set; } = false;
+    [Parameter] public bool Disabled { get; set; } = false;
+    [Parameter] public bool Block { get; set; } = false;
+    [Parameter] public string Icon { get; set; } = string.Empty;
+    [Parameter] public string Form { get; set; } = string.Empty;
+    [Parameter] public string CssClass { get; set; } = string.Empty;
+    [Parameter] public string AriaLabel { get; set; } = string.Empty;
+    [Parameter] public EventCallback<MouseEventArgs> OnClick { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter(CaptureUnmatchedValues = true)] public Dictionary<string, object>? AdditionalAttributes { get; set; }
+
+    private async Task HandleClick(MouseEventArgs e)
+    {
+        if (!Disabled)
+        {
+            await OnClick.InvokeAsync(e);
+        }
+    }
+
+    private string GetButtonType()
+    {
+        return Type switch
+        {
+            ButtonType.Button => "button",
+            ButtonType.Submit => "submit",
+            ButtonType.Reset => "reset",
+            _ => "button"
+        };
+    }
+
+    private string GetVariantClass()
+    {
+        return Variant switch
+        {
+            ButtonVariant.Primary => "primary",
+            ButtonVariant.Secondary => "secondary",
+            ButtonVariant.Success => "success",
+            ButtonVariant.Danger => "danger",
+            _ => "primary"
+        };
+    }
+
+    private string GetSizeClass()
+    {
+        return Size switch
+        {
+            ButtonSize.Small => "sm",
+            ButtonSize.Medium => "md",
+            ButtonSize.Large => "lg",
+            _ => "md"
+        };
+    }
+
+    private string GetCssClass()
+    {
+        var classes = new List<string> { "btn", $"btn-{GetVariantClass()}" };
+
+        if (Outline)
+            classes.Add("btn-outline");
+
+        if (Size != ButtonSize.Medium)
+            classes.Add($"btn-{GetSizeClass()}");
+
+        if (Block)
+            classes.Add("btn-block");
+
+        if (!string.IsNullOrEmpty(CssClass))
+            classes.Add(CssClass);
+
+        return string.Join(" ", classes);
+    }
+}

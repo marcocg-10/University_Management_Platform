@@ -1,0 +1,31 @@
+.texture-grid {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.texture-option {
+    width: 110px;
+    height: 110px;
+    object-fit: cover;
+    border: 2px solid rgba(0,0,0,.2);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: transform .07s ease-in-out, box-shadow .07s ease-in-out, border-color .07s;
+}
+
+    .texture-option:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 10px rgba(0,0,0,.12);
+    }
+
+    .texture-option:focus {
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(13, 110, 253, .25);
+    }
+
+    .texture-option.selected {
+        border-color: #0d6efd; /* bootstrap primary */
+        box-shadow: 0 0 0 3px rgba(13, 110, 253, .25);
+    }

@@ -1,0 +1,37 @@
+﻿@using UCR.ECCI.PI.ThemePark.Frontend.Domain.Buildings.Entities
+@using UCR.ECCI.PI.ThemePark.Frontend.Application.Buildings.Services
+@using UCR.ECCI.PI.ThemePark.Frontend.Presentation.Blazor.Core.Components
+@inject IBuildingService BuildingService
+
+<CustomSelect TItem="Building"
+              Items="_buildings"
+              SelectedItem="SelectedBuilding"
+              SelectedItemChanged="SelectedBuildingChanged"
+              GetItemText="@(building => building.Name)"
+              GetItemKey="@(building => building.Id)"
+              Placeholder="Select Building"
+              SearchPlaceholder="Search"
+              NoResultsText="No buildings found"
+              EnableSearch="true" />
+
+@code {
+    [Parameter]
+    public Building? SelectedBuilding { get; set; }
+
+    [Parameter]
+    public EventCallback<Building?> SelectedBuildingChanged { get; set; }
+
+    private IEnumerable<Building> _buildings = Array.Empty<Building>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            _buildings = await BuildingService.GetBuildingsAsync();
+        }
+        catch
+        {
+            _buildings = Array.Empty<Building>();
+        }
+    }
+}

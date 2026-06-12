@@ -1,0 +1,174 @@
+/* ===========================================================
+   Classroom Delete Modal Styles
+   =========================================================== */
+
+/* ================================
+   OVERLAY SECTION
+   ================================ */
+
+/* 
+   Semi-transparent dark overlay behind the popup.
+   Prevents interaction with the background content.
+*/
+.bd-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.4);
+    z-index: 1000;
+}
+
+/* ================================
+   MAIN POPUP CONTAINER
+   ================================ */
+
+/* 
+   Fixed position popup centered horizontally and vertically (approx 40% from top).
+   Features rounded corners, subtle shadow, and white background.
+*/
+.bd-card {
+    position: fixed; /* Keeps popup visible when scrolling */
+    top: 40vh; /* Positions popup roughly in vertical center */
+    left: 50%; /* Centers horizontally */
+    transform: translateX(-50%); /* Adjusts alignment */
+    width: 280px; /* Popup width */
+    background: #fff; /* White background */
+    border: 0.5px solid #757575; /* Subtle border */
+    border-radius: 8px; /* Rounded corners */
+    box-shadow: 0 12px 28px rgba(0,0,0,.18); /* Floating shadow */
+    font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; /* Modern font */
+    z-index: 1001; /* Above overlay */
+}
+
+/* ================================
+   HEADER SECTION
+   ================================ */
+
+/* 
+   Layout for title and close button.
+   Flexbox ensures proper alignment.
+*/
+.bd-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 12px 6px;
+}
+
+/* Title and icon wrapper */
+.bd-title-wrap {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+}
+
+/* Circular icon style (info indicator) */
+.bd-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: 1px solid #d97706;
+    color: #d97706;
+    font-size: 12px;
+    line-height: 1;
+}
+
+/* Title text style */
+.bd-title {
+    font-weight: 600;
+    color: #111827;
+}
+
+/* Close ("×") button style */
+.bd-close {
+    background: transparent;
+    border: 0;
+    font-size: 18px;
+    line-height: 1;
+    cursor: pointer;
+    color: #6b7280;
+    padding: 0 4px;
+}
+
+/* ================================
+   SUBTITLE SECTION
+   ================================ */
+
+/* 
+   Displays contextual info, such as Classroom ID.
+*/
+.bd-subtitle {
+    padding: 0 12px;
+    color: #b45309;
+    font-size: 13px;
+    font-weight: 600;
+    margin-top: 2px;
+}
+
+/* Highlighted text inside subtitle (for ID) */
+.bd-hl {
+    color: #b45309;
+}
+
+/* ================================
+   BODY SECTION
+   ================================ */
+
+/* 
+   Main text message of the modal.
+   Clear, concise, and easy to read.
+*/
+.bd-body {
+    padding: 8px 12px 0;
+    color: #374151;
+    font-size: 13px;
+}
+
+/* ================================
+   FOOTER SECTION
+   ================================ */
+
+/* 
+   Contains buttons for confirmation/cancellation.
+   Buttons are aligned horizontally.
+*/
+.bd-footer {
+    padding: 12px;
+    display: flex;
+    gap: 8px;
+    justify-content: flex-start;
+}
+
+/* Generic button base style */
+.bd-btn {
+    padding: 6px 12px;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+/* Delete (danger) button style */
+.bd-btn-danger {
+    background: #B14212; /* Strong orange-red tone */
+    color: #fff; /* White text */
+}
+
+    .bd-btn-danger:hover {
+        background: #9e3610; /* Darker shade on hover for feedback. */
+    }
+
+/* Gray cancel button */
+.bd-btn-cancel {
+    background: #f2f2f2;
+    color: #9f9c9c;
+}
+
+    .bd-btn-cancel:hover {
+        background: #d6d6d6;
+    }

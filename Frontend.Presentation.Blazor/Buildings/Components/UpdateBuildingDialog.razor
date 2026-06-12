@@ -1,0 +1,602 @@
+@using Microsoft.AspNetCore.Components.Forms
+@using UCR.ECCI.PI.ThemePark.Frontend.Domain.Buildings.Entities
+@using UCR.ECCI.PI.ThemePark.Frontend.Presentation.Blazor.Buildings.Models
+@inject NavigationManager NavigationManager
+
+<h5 class="modal-title fw-bold header-divider">Building Details</h5>
+
+@if (!string.IsNullOrWhiteSpace(ErrorMessage))
+{
+    <span class="alert-danger"> @ErrorMessage </span>
+}
+
+<EditForm Id="update-building-form" class="d-flex gap-3" Model="@EditableBuilding" OnSubmit="HandleSubmitAsync">
+<div class="form-content-container">
+    <div class="form-group">
+        <CustomInput
+            Label="Name"
+            BoldLabel="true"
+            Placeholder="e.g. Computer Science"
+            Type="string"
+            ErrorMessage="@nameError"
+            @bind-Value="EditableBuilding.Name"
+            IsValid="@(!string.IsNullOrWhiteSpace(EditableBuilding.Name) && System.Text.RegularExpressions.Regex.IsMatch(EditableBuilding.Name, @"^[^\d]+$"))"
+            onblur="@OnNameBlur" />
+    </div>
+
+    <div class="form-group">
+        <CustomInput Label="Floor Count"
+            BoldLabel="true"
+            Placeholder="e.g. 5"
+            Type="number"
+            ErrorMessage="@floorCountError"
+            @bind-Value="EditableBuilding.FloorCount"
+            IsValid="@(EditableBuilding.FloorCount is not null && EditableBuilding.FloorCount >= 1 && EditableBuilding.FloorCount <= 10)"
+            onblur="@OnFloorCountBlur"
+            CssClass="input-right" />
+    </div>
+
+    <hr class="my-2" />
+    <div class="row-container">
+        <div class="form-group">
+            <CustomInput
+                Label="Color"
+				BoldLabel="true"
+                Type="color"
+                ErrorMessage="@colorError"
+                @bind-Value="EditableBuilding.RenderInfo.Color"
+                IsValid="@(!string.IsNullOrWhiteSpace(EditableBuilding.RenderInfo.Color))"
+                onblur="@OnColorBlur"
+                OnInput="@UpdateObjectColor" />
+        </div>
+        <span style="background-color: @EditableBuilding.RenderInfo.Color; display: inline-block; width: 20px; height: 20px; border: 1px solid #000; margin: 30px 0 0 10px"></span>
+    </div>
+
+    <h6 class="fw-bold mb-2">Texture</h6>
+    <InputText class="d-none" @bind-Value="EditableBuilding.RenderInfo.Texture" />
+    @if (!string.IsNullOrEmpty(textureError))
+    {
+        <div class="validation-message">@textureError</div>
+    }
+
+    <div class="texture-grid mb-4">
+        @foreach (var tex in _textureOptions)
+        {
+            var isSelected = string.Equals(EditableBuilding.RenderInfo.Texture, tex, StringComparison.OrdinalIgnoreCase);
+            var url = GetTextureUrl(tex);
+            <img src="@url"
+                 alt="Texture option"
+                 class="texture-option @(isSelected ? "selected" : null)"
+                 role="button"
+                 tabindex="0"
+                 aria-pressed="@(isSelected ? "true" : "false")"
+                 @onclick="@(() => SelectTexture(tex))"
+                 @onkeydown="@(e => OnTextureKeyDown(e, tex))" />
+        }
+    </div>
+    
+    <hr class="my-2" />
+    <label class="form-label fw-bold" style="margin-bottom: 0.5em;">Dimensions (meters)</label>
+    <div class="row-container">
+        <div class="form-group">
+            <CustomInput
+                Label="Height"
+                Placeholder="e.g. 60.2"
+                Type="decimal"
+				ErrorMessage="@heightError"
+                @bind-Value="EditableBuilding.RenderInfo.Height"
+                IsValid="@(EditableBuilding.RenderInfo.Height is not null && EditableBuilding.RenderInfo.Height > 0)"
+                onblur="@OnHeightBlur"
+                CssClass="input-short input-right" />
+        </div>
+
+        <div class="form-group">
+            <CustomInput 
+                Label="Width"
+                         Placeholder="e.g. 54.6"
+                Type="decimal"
+                ErrorMessage="@widthError"
+                @bind-Value="EditableBuilding.RenderInfo.Width"
+                IsValid="@(EditableBuilding.RenderInfo.Width is not null && EditableBuilding.RenderInfo.Width > 0)"
+                onblur="@OnWidthBlur"
+                CssClass="input-short input-right"
+                OnInput="@UpdateObjectScale" />
+        </div>
+
+        <div class="form-group">
+            <CustomInput
+                Label="Depth"
+                Placeholder="e.g. 47.8"
+                Type="decimal"
+                ErrorMessage="@depthError"
+                @bind-Value="EditableBuilding.RenderInfo.Depth"
+                IsValid="@(EditableBuilding.RenderInfo.Depth is not null && EditableBuilding.RenderInfo.Depth > 0)"
+                onblur="@OnDepthBlur"
+                CssClass="input-short input-right"
+                OnInput="@UpdateObjectScale" />
+
+        </div>
+    </div>
+
+    <label class="form-label fw-bold" style="margin-bottom: 0.5em;">Coordinates</label>
+    <div class="row-container">
+        <div class="form-group">
+            <CustomInput
+                Label="X"
+                Placeholder="e.g. 232"
+                Type="decimal"
+                ErrorMessage="@xError"
+                @bind-Value="EditableBuilding.RenderInfo.X"
+                IsValid="@(EditableBuilding.RenderInfo.X is not null)"
+                onblur="@OnXBlur"
+                CssClass="input-short input-right"
+                OnInput="@UpdateMinimapPosition" />
+        </div>
+
+        <div class="form-group">
+            <CustomInput
+                Label="Y"
+                Placeholder="e.g. 342"
+                Type="decimal"
+                ErrorMessage="@yError"
+                @bind-Value="EditableBuilding.RenderInfo.Y"
+                IsValid="@(EditableBuilding.RenderInfo.Y is not null)"
+                Disabled="true"
+                onblur="@OnYBlur"
+                             CssClass="input-short input-right" />
+        </div>
+
+        <div class="form-group">
+            <CustomInput
+                Label="Z"
+                Placeholder="e.g. 127"
+                Type="decimal"
+                ErrorMessage="@zError"
+                @bind-Value="EditableBuilding.RenderInfo.Z"
+                IsValid="@(EditableBuilding.RenderInfo.Z is not null)"
+                onblur="@OnZBlur"
+                CssClass="input-short input-right"
+                OnInput="@UpdateMinimapPosition" />
+        </div>
+    </div>
+
+    <CustomButton 
+        Text="Update"
+        Type="CustomButton.ButtonType.Submit"
+        Variant="CustomButton.ButtonVariant.Primary"
+        Block="true"
+        Form="update-building-form"
+        CssClass="text-white"
+        Disabled="@IsBusy" />
+</div>
+    <BuildingsMinimap OnObjectMoved="HandleMove" @ref="_buildingsMinimap" />
+</EditForm>
+
+<style>
+    .row-container {
+        display: flex;
+        gap: 1em;
+    }
+
+    .validation-message {
+        color: red;
+        font-size: 0.8em;
+        margin-top: 0.2em;
+    }
+
+    .form-group {
+        margin-bottom: 1em;
+    }
+
+    .alert-danger {
+        background-color: #f8d7da;
+        border-color: #f5c6cb;
+        color: #721c24;
+    }
+
+    .header-divider {
+        border-bottom: 2px solid #dee2e6; /* Color gris claro, puedes cambiarlo */
+        padding-bottom: 0.5em;
+        margin-bottom: 1em;
+    }
+
+    .input-short {
+        width: 12.2em;
+    }
+
+    .form-group [placeholder="e.g. 5"] {
+        max-width: 6em;
+        min-width: 3em;
+        text-align: center;
+    }
+
+    .input-right {
+        text-align: right;
+    }
+
+    .form-group input[type="decimal"] {
+        text-align: right !important;
+    }
+</style>
+
+@code {
+    private BuildingsMinimap? _buildingsMinimap;
+
+    [Parameter] public bool IsOpen { get; set; }
+    [Parameter] public bool IsBusy { get; set; }
+    [Parameter] public string? ErrorMessage { get; set; }
+
+    private bool _wasOpen;
+
+    [Parameter] public Building? BuildingToEdit { get; set; }
+
+    [Parameter] public EventCallback OnCancel { get; set; }
+    [Parameter] public EventCallback<Building> OnConfirm { get; set; }
+
+    private EditableBuildingModel EditableBuilding { get; set; } = new();
+
+    private int _id;
+    private string? _officialId;
+    private string nameError = "";
+    private string colorError = "";
+    private string floorCountError = "";
+    private string heightError = "";
+    private string widthError = "";
+    private string depthError = "";
+    private string xError = "";
+    private string yError = "";
+    private string zError = "";
+    private string textureError = "";
+
+
+
+    Task HandleMove(MiniMap.ObjectPosition pos)
+    {
+        EditableBuilding.RenderInfo.X = (decimal)Math.Round(pos.X, 1);
+        EditableBuilding.RenderInfo.Y = 0;
+        EditableBuilding.RenderInfo.Z = (decimal)Math.Round(pos.Y, 1);
+
+        Console.WriteLine("Model new position:" +
+            $" X: {EditableBuilding.RenderInfo.X}, " +
+            $"Y: {EditableBuilding.RenderInfo.Y}, " +
+            $"Z: {EditableBuilding.RenderInfo.Z}");
+
+        Console.WriteLine($"Building moved to X: {pos.X}, Y: {pos.Y}");
+
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+
+    private async Task UpdateMinimapPosition()
+    {
+        if (_buildingsMinimap is not null)
+        {
+            await _buildingsMinimap.UpdatePosition(
+                BuildingToEdit!.Id.ToString(),
+                (double)(EditableBuilding.RenderInfo.X ?? 0),
+                (double)(EditableBuilding.RenderInfo.Z ?? 0));
+        }
+    }
+
+    private async Task UpdateObjectScale()
+    {
+        if (_buildingsMinimap is not null)
+        {
+            await _buildingsMinimap.UpdateScale(
+                BuildingToEdit!.Id.ToString(),
+                (double)(EditableBuilding.RenderInfo.Width ?? 10),
+                (double)(EditableBuilding.RenderInfo.Depth ?? 10));
+        }
+    }
+
+    private async Task UpdateObjectColor()
+    {
+        if (_buildingsMinimap is not null)
+        {
+            await _buildingsMinimap.UpdateObjectColor(
+                BuildingToEdit!.Id.ToString(),
+                EditableBuilding.RenderInfo.Color ?? "#000000");
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && _buildingsMinimap is not null)
+        {
+            await _buildingsMinimap.ResetMiniMap();
+            await _buildingsMinimap.LoadBuildingAlreadyCreated(BuildingToEdit!.Id, true);
+        }
+    }
+
+    /// <summary>
+    /// Called when the component has received parameters from its parent in the render tree, and the values have been assigned to properties.
+    /// </summary>
+    protected override async Task OnParametersSetAsync()
+    {
+        ErrorMessage = string.Empty;
+
+        if (_wasOpen && !IsOpen && _buildingsMinimap is not null)
+        {
+            await _buildingsMinimap.ResetMiniMap();
+        }
+
+        if (IsOpen && BuildingToEdit is not null && string.IsNullOrEmpty(EditableBuilding.Name))
+        {
+            _id = BuildingToEdit.Id;
+            _officialId = BuildingToEdit.OfficialId;
+            EditableBuilding.Name = BuildingToEdit.Name ?? string.Empty;
+            EditableBuilding.FloorCount = BuildingToEdit.FloorCount;
+
+            var r = BuildingToEdit.RenderInfo;
+            if (r is not null)
+            {
+                EditableBuilding.RenderInfo = new EditableRenderInfo
+                {
+                    Color = r.Color,
+                    Height = r.Height,
+                    Width = r.Width,
+                    Depth = r.Depth,
+                    X = r.X,
+                    Y = r.Y,
+                    Z = r.Z,
+                    Texture = r.Texture
+                };
+            }
+        }
+
+        _wasOpen = IsOpen;
+    }
+
+
+    public async Task CleanMinimap()
+    {
+        if (_buildingsMinimap is not null)
+        {
+            await _buildingsMinimap.ResetMiniMap();
+        }
+    }
+
+    /// <summary>
+    /// Handles the cancel action.
+    /// </summary>
+    /// <returns></returns>
+    private async Task HandleCancel()
+    {
+        if (IsBusy) return;
+        await OnCancel.InvokeAsync();
+    }
+
+    /// <summary>
+    /// Handles the form submission.
+    /// </summary>
+    /// <param name="_"></param>
+    /// <returns></returns>
+    private async Task HandleSubmitAsync(EditContext _)
+    {
+        await HandleConfirmAsync();
+    }
+
+    /// <summary>
+    /// Validates the form inputs.
+    /// </summary>
+    /// <returns></returns>
+    private bool ValidateForm()
+    {
+        bool isValid = true;
+
+        nameError = string.IsNullOrWhiteSpace(EditableBuilding.Name)
+        ? "Name is required"
+        : (!System.Text.RegularExpressions.Regex.IsMatch(EditableBuilding.Name, @"^[^\d]+$")
+            ? "Name must not contain numbers"
+            : "");
+
+        colorError = string.IsNullOrWhiteSpace(EditableBuilding.RenderInfo.Color) ? "Color is required" : "";
+
+        floorCountError = EditableBuilding.FloorCount is null
+            ? "Floor count is required"
+            : (EditableBuilding.FloorCount < 1 || EditableBuilding.FloorCount > 10
+                ? "Floor count must be between 1 and 10"
+                : "");
+
+        heightError = EditableBuilding.RenderInfo.Height is null
+            ? "Height is required"
+            : (EditableBuilding.RenderInfo.Height <= 0 ? "Height must be greater than 0" : "");
+
+        widthError = EditableBuilding.RenderInfo.Width is null
+            ? "Width is required"
+            : (EditableBuilding.RenderInfo.Width <= 0 ? "Width must be greater than 0" : "");
+
+        depthError = EditableBuilding.RenderInfo.Depth is null
+            ? "Depth is required"
+            : (EditableBuilding.RenderInfo.Depth <= 0 ? "Depth must be greater than 0" : "");
+        xError = EditableBuilding.RenderInfo.X is null
+            ? "X coordinate is required"
+            : "";
+
+        yError = EditableBuilding.RenderInfo.Y is null
+            ? "Y coordinate is required"
+            : "";
+
+        zError = EditableBuilding.RenderInfo.Z is null
+            ? "Z coordinate is required"
+            : "";
+
+        textureError = string.IsNullOrWhiteSpace(EditableBuilding.RenderInfo.Texture)
+            ? "Texture is required" : (!EditableBuilding.RenderInfo.Texture.EndsWith(".png") 
+            ? "Texture must end with '.png'" : "");
+
+
+        isValid &= string.IsNullOrEmpty(nameError);
+        isValid &= string.IsNullOrEmpty(colorError);
+        isValid &= string.IsNullOrEmpty(floorCountError);
+        isValid &= string.IsNullOrEmpty(heightError);
+        isValid &= string.IsNullOrEmpty(widthError);
+        isValid &= string.IsNullOrEmpty(depthError);
+        isValid &= string.IsNullOrEmpty(xError);
+        isValid &= string.IsNullOrEmpty(yError);
+        isValid &= string.IsNullOrEmpty(zError);
+        isValid &= string.IsNullOrEmpty(textureError);
+
+        return isValid;
+    }
+
+    /// <summary>
+    /// Handles the confirm action.
+    /// </summary>
+    /// <returns></returns>
+    private async Task HandleConfirmAsync()
+    {   
+        ErrorMessage = string.Empty;
+        if (IsBusy) return;
+
+        if (!ValidateForm())
+        {
+            StateHasChanged();
+            return;
+        }
+
+        var renderInfo = new BuildingRenderInfo(
+            EditableBuilding.RenderInfo.Color,
+            EditableBuilding.RenderInfo.Height ?? 0,
+            EditableBuilding.RenderInfo.Width ?? 0,
+            EditableBuilding.RenderInfo.Depth ?? 0,
+            EditableBuilding.RenderInfo.X ?? 0,
+            EditableBuilding.RenderInfo.Y ?? 0,
+            EditableBuilding.RenderInfo.Z ?? 0,
+            EditableBuilding.RenderInfo.Texture
+        );
+
+        var updated = new Building(
+            _id,
+            _officialId ?? string.Empty,
+            EditableBuilding.Name,
+            EditableBuilding.FloorCount ?? 0,
+            renderInfo
+        );
+
+        ErrorMessage = string.Empty;
+
+        if (OnConfirm.HasDelegate)
+        {
+            await OnConfirm.InvokeAsync(updated);
+        }
+    }
+
+    /// <summary>
+    /// Model class for editable building data.
+    /// </summary>
+    private class EditableBuildingModel
+    {
+        public string Name { get; set; } = string.Empty;
+        public int? FloorCount { get; set; }
+        public EditableRenderInfo RenderInfo { get; set; } = new EditableRenderInfo();
+    }
+
+    /// <summary>
+    /// Model class for editable render information.
+    /// </summary>
+    private class EditableRenderInfo
+    {
+        public string Color { get; set; } = "#CDCECF";
+        public decimal? Height { get; set; }
+        public decimal? Width { get; set; }
+        public decimal? Depth { get; set; }
+        public decimal? X { get; set; }
+        public decimal? Y { get; set; }
+        public decimal? Z { get; set; }
+        public string Texture { get; set; } = string.Empty;
+    }
+
+    private const string _assetsBasePath = "assets/buildings/textures/";
+
+    private readonly string[] _textureOptions =
+    [
+        "Outdoor_Wall_T02_Height.png",
+        "Outdoor_Wall_T04_Ambient_occlusion.png",
+        "Outdoor_Wall_T12_Roughness.png"
+    ];
+
+    private string GetTextureUrl(string fileName) => $"{NavigationManager.BaseUri}{_assetsBasePath}{fileName}";
+
+    private void SelectTexture(string path)
+    {
+        EditableBuilding.RenderInfo.Texture = path;
+    }
+
+    private void OnTextureKeyDown(KeyboardEventArgs e, string path)
+    {
+        if (e.Key is "Enter" or " " or "Spacebar")
+        {
+            SelectTexture(path);
+        }
+    }
+
+    private void OnNameBlur()
+    {
+        nameError = string.IsNullOrWhiteSpace(EditableBuilding.Name)
+            ? "Name is required"
+            : (!System.Text.RegularExpressions.Regex.IsMatch(EditableBuilding.Name, @"^[^\d]+$")
+                ? "Name must not contain numbers"
+                : "");
+        StateHasChanged();
+    }
+
+private void OnColorBlur()
+{
+    colorError = string.IsNullOrWhiteSpace(EditableBuilding.RenderInfo.Color) ? "Color is required" : "";
+    StateHasChanged();
+}
+
+private void OnFloorCountBlur()
+{
+    floorCountError = EditableBuilding.FloorCount is null
+        ? "Floor count is required"
+        : (EditableBuilding.FloorCount < 1 || EditableBuilding.FloorCount > 10
+            ? "Floor count must be between 1 and 10"
+            : "");
+    StateHasChanged();
+}
+
+private void OnHeightBlur()
+{
+    heightError = EditableBuilding.RenderInfo.Height is null
+        ? "Height is required"
+        : (EditableBuilding.RenderInfo.Height <= 0 ? "Height must be greater than 0" : "");
+    StateHasChanged();
+}
+
+private void OnWidthBlur()
+{
+    widthError = EditableBuilding.RenderInfo.Width is null
+        ? "Width is required"
+        : (EditableBuilding.RenderInfo.Width <= 0 ? "Width must be greater than 0" : "");
+    StateHasChanged();
+}
+
+private void OnDepthBlur()
+{
+    depthError = EditableBuilding.RenderInfo.Depth is null
+        ? "Depth is required"
+        : (EditableBuilding.RenderInfo.Depth <= 0 ? "Depth must be greater than 0" : "");
+    StateHasChanged();
+}
+
+private void OnXBlur()
+{
+    xError = EditableBuilding.RenderInfo.X is null ? "X coordinate is required" : "";
+    StateHasChanged();
+}
+
+private void OnYBlur()
+{
+    yError = EditableBuilding.RenderInfo.Y is null ? "Y coordinate is required" : "";
+    StateHasChanged();
+}
+
+private void OnZBlur()
+{
+    zError = EditableBuilding.RenderInfo.Z is null ? "Z coordinate is required" : "";
+    StateHasChanged();
+}
+}

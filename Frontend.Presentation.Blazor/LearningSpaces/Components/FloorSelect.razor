@@ -1,0 +1,64 @@
+@using UCR.ECCI.PI.ThemePark.Frontend.Domain.Buildings.Entities
+@using UCR.ECCI.PI.ThemePark.Frontend.Presentation.Blazor.Core.Components
+
+<CustomSelect TItem="int?"
+              Items="_floorLevels"
+              SelectedItem="SelectedFloorLevel"
+              SelectedItemChanged="SelectedFloorLevelChanged"
+              GetItemText="@(level => $"Floor {level}")"
+              GetItemKey="@(level => level ?? 0)"
+              Placeholder="@_placeholder"
+              SearchPlaceholder="Search floor"
+              NoResultsText="No floors available"
+              EnableSearch="@(_floorLevels.Count() > 5)"
+              Disabled="@(!_floorLevels.Any())" />
+
+@code {
+    /// <summary>
+    /// The currently selected floor level.
+    /// </summary>
+    [Parameter]
+    public int? SelectedFloorLevel { get; set; }
+
+    /// <summary>
+    /// Event callback invoked when the selected floor level changes.
+    /// </summary>
+    [Parameter]
+    public EventCallback<int?> SelectedFloorLevelChanged { get; set; }
+
+    /// <summary>
+    /// The building for which to display floor levels.
+    /// When this changes, the available floor levels are recalculated.
+    /// </summary>
+    [Parameter]
+    public Building? Building { get; set; }
+
+    private IEnumerable<int?> _floorLevels = Array.Empty<int?>();
+    private string _placeholder = "Select a building first";
+
+    /// <summary>
+    /// Updates the available floor levels when parameters change.
+    /// </summary>
+    protected override void OnParametersSet()
+    {
+        UpdateFloorLevels();
+    }
+
+    /// <summary>
+    /// Generates the list of available floor levels based on the building's floor count.
+    /// </summary>
+    private void UpdateFloorLevels()
+    {
+        if (Building is null || Building.FloorCount <= 0)
+        {
+            _floorLevels = Array.Empty<int?>();
+            _placeholder = "Select a building first";
+        }
+        else
+        {
+            // Generate floor levels from 1 to FloorCount
+            _floorLevels = Enumerable.Range(1, Building.FloorCount).Cast<int?>();
+            _placeholder = "Select floor level";
+        }
+    }
+}

@@ -1,0 +1,308 @@
+﻿@page "/roles"
+@attribute [Authorize]
+@rendermode InteractiveServer
+
+@using UCR.ECCI.PI.ThemePark.Frontend.Application.Roles.Services
+@using UCR.ECCI.PI.ThemePark.Frontend.Domain.Roles.Entity
+@using UCR.ECCI.PI.ThemePark.Frontend.Domain.Roles.Exceptions
+@using UCR.ECCI.PI.ThemePark.Frontend.Presentation.Blazor.Roles.Components
+@using UCR.ECCI.PI.ThemePark.Frontend.Presentation.Blazor.Core.Auth.Components
+@using UCR.ECCI.PI.ThemePark.Frontend.Domain.Core.Metadata;
+@using UCR.ECCI.PI.ThemePark.Frontend.Presentation.Blazor.Core.Components.Icons
+
+
+@inject IRoleService RoleService
+@inject IToastService ToastService
+
+<PageTitle>Roles</PageTitle>
+<ProtectedPageBase RequiredPermission="ManageRoles">
+    <h1><strong>Roles</strong></h1>
+
+      <div class="d-flex justify-content-between align-items-center mb-3">
+
+        <div class="input-group w-50 mb-2">
+
+            <input class="form-control"
+                   placeholder="Search roles..."
+                   @bind="searchRoles"
+                   @bind:event="oninput"
+                   @onblur="() => LoadRolesPageAsync(1)"/>
+
+            <button class="input-group-text bg-white border-0"
+                    style="cursor: pointer;"
+                    @onclick="() => LoadRolesPageAsync(1)">
+                <SearchIcon />
+            </button>
+
+        </div>
+
+	<button class="btn btn-ucr-blue-lg" type="button" @onclick="ShowAddRole">
+		Add
+	</button>
+    </div>
+
+
+        <Loading IsLoading="_isLoading">
+            <RoleTable Roles="_roles" />
+        </Loading>
+
+
+
+        <Modal IsVisible="@_showAddRole"
+               OnClose="HideAddRole"
+               ContentClass="modal-content"
+               OverlayStyle="align-items:flex-start; padding-top:5vh;"
+               ContentStyle="width: 50vw; max-width: 720px; max-height: 70vh; display:flex; flex-direction:column; overflow:auto;">
+            <AddRoleModal OnSaved="HandleRoleAdded"></AddRoleModal>
+        </Modal>
+
+        <!-- Pagination footer -->
+        <div class="d-flex justify-content-center mt-2">
+            <div class="d-flex align-items-center justify-content-center gap-2 flex-nowrap text-nowrap pagination-inline">
+                <div class="d-flex align-items-center gap-2">
+                    <label class="form-label fw-bold mb-0 me-1">Page Size:</label>
+
+                    <!-- Dropdown pagination -->
+                    <select class="form-select form-select-sm"
+                            style="width: 110px;"
+                            @bind="_selectedPageSizeOption"
+                            disabled="@_isLoading">
+                        <option value="10">10</option>
+                        <option value="20">20</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                        <option value="custom">Custom</option>
+                    </select>
+
+                    <!-- Custom size input (visible only when 'custom' is selected) -->
+                    @if (_selectedPageSizeOption == "custom")
+                    {
+                        <input type="number"
+                               class="form-control form-control-sm"
+                               style="width: 70px;"
+                               min="1"
+                               max="100"
+                               @bind="_customPageSize"
+                               @onblur="ApplyCustomPageSize"
+                               disabled="@_isLoading" />
+                    }
+                </div>
+                <span class="tab-spacer"></span>
+
+                <div class="d-flex align-items-center gap-2">
+                    <button class="btn btn-sm pagination-nav-btn"
+                            @onclick="PrevPageAsync"
+                            disabled="@(!CanPrev || _isLoading)">
+                        Previous
+                    </button>
+
+                    @foreach (var p in PageNumbers)
+                    {
+                        <button class="btn btn-sm pagination-number-btn @(p == CurrentPage ? "active" : "")"
+                                @onclick="@(() => GoToPage(p))"
+                                disabled="@_isLoading">
+                            @p
+                        </button>
+                    }
+
+                    <button class="btn btn-sm pagination-nav-btn"
+                            @onclick="NextPageAsync"
+                            disabled="@(!CanNext || _isLoading)">
+                        Next
+                    </button>
+                </div>
+            </div>
+        </div>
+
+</ProtectedPageBase>
+@code {
+
+    bool _isLoading = true;
+    IEnumerable<Role> _roles = [];
+    private string searchRoles = "";
+    private string query = string.Empty;
+    private PaginationMetadata? _pagination;
+    private int CurrentPage => _pagination?.CurrentPage ?? 1;
+    private int TotalPages => _pagination?.TotalPages ?? 0;
+    private bool CanPrev => _pagination?.HasPrevious == true;
+    private bool CanNext => _pagination?.HasNext == true;
+    private int _pageSize = 10;
+    private string _selectedPageSizeOptionBacking = "10";
+    private int _customPageSizeBacking = 10;
+    private IEnumerable<Role> _availableRole = Enumerable.Empty<Role>();
+
+    private bool _showAddRole;
+    /// <summary>
+    /// Called when the component is initialized.
+    /// Fetches Role data asynchronously and updates the loading state.
+    /// </summary>
+
+
+    private async Task LoadRoles()
+    {
+        _isLoading = true;
+        try
+        {
+            _roles = await RoleService.GetRolesAsync();
+        }
+        catch (RoleException ex)
+        {
+            ToastService.ShowError($"Failed to load roles: {ex.Message}");
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError($"Error loading roles, please try later");
+        }
+        _isLoading = false;
+        StateHasChanged();
+    }
+    
+    protected async override Task OnInitializedAsync()
+    {
+        await LoadRoles();
+    }
+
+    private void ShowAddRole() => _showAddRole = true;
+    private void HideAddRole() => _showAddRole = false;
+
+    private async Task HandleRoleAdded()
+    {
+        _showAddRole = false;
+        await LoadRoles(); // Refresh the role list
+    }
+    private IEnumerable<int> PageNumbers
+    {
+        get
+        {
+            // Window size: show current page ±2, plus first and last page
+            const int window = 2;
+            int totalPages = Math.Max(TotalPages, 1);
+            int current = CurrentPage;
+            var pages = new List<int>();
+            if (totalPages <= 7)
+            {
+                // If few pages, show all
+                pages.AddRange(Enumerable.Range(1, totalPages));
+            }
+            else
+            {
+                // Always show first page
+                pages.Add(1);
+                // Determine window start/end
+                int start = Math.Max(2, current - window);
+                int end = Math.Min(totalPages - 1, current + window);
+                // Add windowed pages
+                for (int i = start; i <= end; i++)
+                {
+                    pages.Add(i);
+                }
+                // Always show last page
+                pages.Add(totalPages);
+            }
+            return pages;
+        }
+    }
+
+    /// <summary>
+    /// Loads a specific page of boards applying pagination.
+    /// </summary>
+    /// <param name="page">Page number to load (1-based).</param>
+    private async Task LoadRolesPageAsync(int page)
+    {
+        if (page < 1) page = 1;
+        _isLoading = true;
+        StateHasChanged();
+
+        try
+        {
+            var (Roles, Metadata) = await RoleService.SearchRolesAsync(searchRoles, page, _pageSize);
+
+            _roles = Roles ?? Enumerable.Empty<Role>();
+            _pagination = Metadata ?? null;
+        }
+        catch (Exception ex)
+        {
+            throw new Exception("An unexpected error occurred while loading the users page.", ex);
+        }
+        finally
+        {
+            _isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private Task NextPageAsync() => CanNext ? LoadRolesPageAsync(CurrentPage + 1) : Task.CompletedTask;
+    private Task PrevPageAsync() => CanPrev ? LoadRolesPageAsync(CurrentPage - 1) : Task.CompletedTask;
+
+    private Task GoToPage(int page)
+    {
+        var max = Math.Max(TotalPages, 1);
+        if (page < 1) page = 1;
+        if (page > max) page = max;
+
+        return LoadRolesPageAsync(page);
+    }
+
+    private string _selectedPageSizeOption
+    {
+        get => _selectedPageSizeOptionBacking;
+        set
+        {
+            if (_selectedPageSizeOptionBacking == value) return;
+            _selectedPageSizeOptionBacking = value;
+
+            UpdateEffectivePageSize();
+            _ = LoadRolesPageAsync(1);
+
+        }
+    }
+
+    private int _customPageSize
+    {
+        get => _customPageSizeBacking;
+        set
+        {
+            _customPageSizeBacking = value;
+        }
+    }
+
+    private void ApplyCustomPageSize()
+    {
+        if (_selectedPageSizeOptionBacking == "custom")
+        {
+            if (_customPageSizeBacking < 1)
+            {
+
+                _customPageSizeBacking = 1;
+                Console.WriteLine("Page size must be at least 1. \nIt has been adjusted to 1.");
+
+            }
+            else if (_customPageSizeBacking > 100)
+            {
+                _customPageSizeBacking = 100;
+                Console.WriteLine("Page size cannot exceed 100. \nIt has been adjusted to 100.");
+            }
+
+            UpdateEffectivePageSize();
+            _ = LoadRolesPageAsync(1);
+
+        }
+    }
+
+    private void UpdateEffectivePageSize()
+    {
+        if (_selectedPageSizeOptionBacking == "custom")
+        {
+            _pageSize = _customPageSizeBacking;
+        }
+        else
+        {
+            if (!int.TryParse(_selectedPageSizeOptionBacking, out _pageSize))
+            {
+                _pageSize = 10;
+            }
+        }
+    }
+
+}
+

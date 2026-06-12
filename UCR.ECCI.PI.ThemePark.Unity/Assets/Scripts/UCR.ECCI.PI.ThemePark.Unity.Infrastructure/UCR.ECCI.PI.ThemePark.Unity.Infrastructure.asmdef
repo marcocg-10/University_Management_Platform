@@ -1,0 +1,19 @@
+{
+    "name": "UCR.ECCI.PI.ThemePark.Unity.Infrastructure",
+    "rootNamespace": "UCR.ECCI.PI.ThemePark.Unity.Infrastructure",
+    "references": [
+        "UCR.ECCI.PI.ThemePark.Unity.Domain",
+        "UCR.ECCI.PI.ThemePark.Unity.Application",
+        "Zenject",
+        "Unity.InputSystem"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

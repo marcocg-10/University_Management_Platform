@@ -1,0 +1,171 @@
+﻿@using System.ComponentModel.DataAnnotations
+@using UCR.ECCI.PI.ThemePark.Frontend.Domain.Roles.Entity
+@using UCR.ECCI.PI.ThemePark.Frontend.Domain.Roles.Exceptions
+@using UCR.ECCI.PI.ThemePark.Frontend.Domain.Roles.ValueObjects
+@using UCR.ECCI.PI.ThemePark.Frontend.Presentation.Blazor.Core.Components
+@using Microsoft.AspNetCore.Components.Forms
+
+@inject UCR.ECCI.PI.ThemePark.Frontend.Application.Roles.Services.IRoleService RoleService
+
+@inject IToastService ToastService
+
+<h4><strong>Add new role</strong></h4>
+    
+<EditForm EditContext="_editContext" id="create-role-form" OnValidSubmit="HandleSave">
+    <DataAnnotationsValidator />
+
+    <div class="mb-3">
+        <CustomInput BoldLabel="true"
+                     Label="Name"
+                     Placeholder="e.g., guest"
+                     CssClass="form-control"
+                     ErrorMessage="@nameError"
+                     IsValid="@isNameValid"
+                     OnBlur="@inputRoleNameValueChanged"
+                     OnFocus="@clearNameMessage"
+                     AdditionalAttributes="@(new Dictionary<string, object> { { "maxlength", "30" } })"
+                     @bind-Value="roleModel.Name" />
+    </div>
+
+    <CustomButton Type="CustomButton.ButtonType.Submit"
+                    Disabled="@_notValidated"
+                    Block="true"
+                    Form="create-role-form">
+        @if (_saving)
+        {
+            <span>Adding...</span>
+        }
+        else
+        {
+            <span>Add</span>
+        }
+    </CustomButton>
+</EditForm>
+
+@code {
+    [Parameter] public EventCallback OnSaved { get; set; }
+    [Parameter] public Role? Role { get; set; }
+
+    private ValidationMessageStore _validationMessageStore = default!;
+    
+
+    private string nameError = string.Empty;
+    private bool isNameValid = false;
+
+    // for changing the legend ind the save button
+    private bool _saving;
+
+	// to disable and enable the save button
+    private bool _notValidated;
+
+    public class RoleInputModel
+    {
+        [Required(ErrorMessage = "Name field is required.")]
+        public string Name { get; set; } = string.Empty;
+    }
+
+    private RoleInputModel roleModel = new();
+    private EditContext _editContext = null!;
+
+    private void UpdateValidationState()
+    {
+        _notValidated = !(isNameValid && !string.IsNullOrWhiteSpace(roleModel.Name));
+        StateHasChanged();
+    }
+
+    protected override void OnInitialized()
+    {
+		_editContext = new EditContext(roleModel);
+        _validationMessageStore = new ValidationMessageStore(_editContext!);
+        _notValidated = true;
+
+    }
+
+    private async Task HandleSave()
+    {
+        if (_saving) return;
+        _saving = true;
+
+		// set empty role to get with the role model data
+        Role? role = null;
+        RoleName? roleName = null;
+        if(roleModel.Name == string.Empty)
+        {
+            nameError = "Name is required";
+            _saving = false;
+            StateHasChanged();
+            return;
+        }
+		// validate role name
+        if (!RoleName.TryCreate(roleModel.Name, out roleName, out var error))
+        {
+            nameError = error;
+            _saving = false;
+            StateHasChanged();
+            return;
+        }
+        try
+        {
+            role = await RoleService.CreateRoleAsync(new Role(roleName));
+            ToastService.ShowSuccess($"Role '{role?.Name.Value}' created successfully.");
+            await OnSaved.InvokeAsync();
+        }
+        catch (RoleAlreadyExistsException ex)
+        {
+			// Show validation error for name field
+            nameError = ex.Message;
+            isNameValid = false;
+			// Track the validation message field
+            var nameField = new FieldIdentifier(roleModel, nameof(roleModel.Name));
+            _validationMessageStore.Add(nameField, ex.Message);
+
+            _editContext?.NotifyValidationStateChanged();
+            await InvokeAsync(StateHasChanged);
+        }
+        catch (RoleException ex)
+        {
+			// General role exception
+            ToastService.ShowError(ex.Message);
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError($"An error occurred, please try later");
+        }
+        finally
+        {
+            _saving = false;
+            StateHasChanged();
+        }
+    } 
+
+    private async Task clearNameMessage()
+    {
+		// clear name error on focus
+        nameError = string.Empty;
+        var nameField = new FieldIdentifier(roleModel, nameof(roleModel.Name));
+        _validationMessageStore.Clear(nameField);
+        await InvokeAsync(StateHasChanged);
+    }
+    private async Task inputRoleNameValueChanged(string input)
+    {
+        nameError = string.Empty;
+        isNameValid = false;
+		// validate if name is not empty and has valid format
+        if (input == string.Empty)
+        {
+            nameError = "Name cannot be empty.";
+            UpdateValidationState();
+            return;
+        }
+        if (!RoleName.TryCreate(input, out _, out var error))
+        {
+            nameError = error ?? "Invalid Name";
+            UpdateValidationState();
+            return;
+        }
+        
+        isNameValid = true;
+        UpdateValidationState();
+        
+    }
+}
